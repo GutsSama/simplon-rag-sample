@@ -1,5 +1,6 @@
 from langfuse import Langfuse
-from langfuse.model import CreateTrace, CreateSpan, CreateGeneration
+# Removed problematic imports from langfuse.model as they are unused and cause errors in current version
+
 import os
 import uuid
 import uuid
