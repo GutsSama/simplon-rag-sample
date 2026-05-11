@@ -1,37 +1,37 @@
-# Observability: Alerting & Incident Response
+# Observabilité : Alerting et Réponse aux Incidents
 
-## Overview
-Phase 4 ensures that the team is proactively notified when the system degrades. We use Prometheus Alertmanager to route alerts to Discord.
+## Aperçu
+La Phase 4 garantit que l'équipe est notifiée proactivement en cas de dégradation du système. Nous utilisons Prometheus Alertmanager pour router les alertes vers Discord.
 
-## Alerting Strategy
+## Stratégie d'Alerte
 
-### 1. Defined Alerts
-We have configured 4 primary alerts in [rules.yml](file:///Users/amaury/simplon-rag-sample/prometheus/rules.yml):
+### 1. Alertes Définies
+Nous avons configuré 4 alertes prioritaires dans [rules.yml](file:///Users/amaury/simplon-rag-sample/prometheus/rules.yml) :
 
-| Alert Name | Condition | Severity |
-|------------|-----------|----------|
-| `HighPredictLatency` | p95 latency on /predict > 0.5s | Warning |
-| `HighErrorRate` | 5xx errors > 5% of traffic | Critical |
-| `ModelDriftDetected` | Drift score > 0.1 | Warning |
-| `LLMBudgetExceeded` | Daily cost > 15€ | Critical |
+| Nom de l'Alerte | Condition | Sévérité |
+|-----------------|-----------|----------|
+| `HighPredictLatency` | latence p95 sur /predict > 0.5s | Warning |
+| `HighErrorRate` | erreurs 5xx > 5% du trafic | Critical |
+| `ModelDriftDetected` | score de dérive > 0.1 | Warning |
+| `LLMBudgetExceeded` | coût quotidien > 15€ | Critical |
 
-### 2. Notification Routing
-Alertmanager is configured to:
-1. Group similar alerts together.
-2. Wait 10 seconds before sending to avoid "flapping".
-3. Send notifications to a Discord webhook.
+### 2. Routage des Notifications
+Alertmanager est configuré pour :
+1. Grouper les alertes similaires.
+2. Attendre 10 secondes avant l'envoi pour éviter le "flapping".
+3. Envoyer les notifications vers un webhook Discord.
 
-## Incident Response (Runbooks)
-Each alert is linked to a dedicated runbook that provides a step-by-step guide for diagnosis and mitigation:
+## Réponse aux Incidents (Runbooks)
+Chaque alerte est liée à un runbook dédié qui fournit un guide étape par étape pour le diagnostic et la remédiation :
 
-- [High Latency Runbook](file:///Users/amaury/simplon-rag-sample/runbooks/high-latency-predict.md)
-- [High Error Rate Runbook](file:///Users/amaury/simplon-rag-sample/runbooks/high-error-rate.md)
-- [Model Drift Runbook](file:///Users/amaury/simplon-rag-sample/runbooks/prediction-drift.md)
-- [LLM Budget Runbook](file:///Users/amaury/simplon-rag-sample/runbooks/llm-budget-exceeded.md)
+- [Runbook Latence Élevée](file:///Users/amaury/simplon-rag-sample/runbooks/high-latency-predict.md)
+- [Runbook Taux d'Erreur Élevé](file:///Users/amaury/simplon-rag-sample/runbooks/high-error-rate.md)
+- [Runbook Dérive Modèle](file:///Users/amaury/simplon-rag-sample/runbooks/prediction-drift.md)
+- [Runbook Budget LLM Dépassé](file:///Users/amaury/simplon-rag-sample/runbooks/llm-budget-exceeded.md)
 
-## Verification
-To test the alerting pipeline:
-1. Simulate a high error rate by stopping the database: `docker-compose stop postgres`.
-2. Wait 2 minutes.
-3. Check the Prometheus Alerts UI at `http://localhost:9090/alerts`.
-4. Verify the notification in the designated Discord channel.
+## Vérification
+Pour tester le pipeline d'alerting :
+1. Simulez un taux d'erreur élevé en arrêtant la base de données : `docker-compose stop postgres`.
+2. Attendez 2 minutes.
+3. Vérifiez l'interface des alertes Prometheus sur `http://localhost:9090/alerts`.
+4. Vérifiez la notification dans le canal Discord désigné.

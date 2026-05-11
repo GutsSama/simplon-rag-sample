@@ -1,36 +1,36 @@
-# Observability: Prometheus Metrics & Monitoring
+# Observabilité : Métriques Prometheus et Monitoring
 
-## Overview
-Phase 2 implements quantitative monitoring using Prometheus to track the health, performance, and business logic of the MailGuard API.
+## Aperçu
+La Phase 2 implémente le monitoring quantitatif en utilisant Prometheus pour suivre la santé, les performances et la logique métier de l'API MailGuard.
 
-## Implementation Details
+## Détails de l'Implémentation
 
-### 1. The RED Method
-We follow the **RED** (Rate, Errors, Duration) method for HTTP monitoring:
-- **Rate**: `http_requests_total` (Counter) - Number of requests per second.
-- **Errors**: `http_requests_total{status=~"5.."}` - Number of failed requests.
-- **Duration**: `http_request_duration_seconds` (Histogram) - Request latency distribution.
+### 1. La Méthode RED
+Nous suivons la méthode **RED** (Rate, Errors, Duration) pour le monitoring HTTP :
+- **Rate** (Débit) : `http_requests_total` (Counter) - Nombre de requêtes par seconde.
+- **Errors** (Erreurs) : `http_requests_total{status=~"5.."}` - Nombre de requêtes échouées.
+- **Duration** (Durée) : `http_request_duration_seconds` (Histogram) - Distribution de la latence des requêtes.
 
-### 2. ML-Specific Metrics
-For the spam classifier (`/predict`), we track:
-- **Prediction Distribution**: `ml_prediction_total` (Counter) - Count of spam vs non-spam vs phishing.
-- **Confidence Scores**: `ml_prediction_confidence` (Histogram) - Helps identify when the model is becoming uncertain.
-- **Model Drift**: `ml_model_drift_score` (Gauge) - Quantifies the change in prediction distribution over a sliding window.
+### 2. Métriques spécifiques au ML
+Pour le classifieur de spam (`/predict`), nous suivons :
+- **Distribution des prédictions** : `ml_prediction_total` (Counter) - Décompte des spam vs non-spam vs phishing.
+- **Scores de confiance** : `ml_prediction_confidence` (Histogram) - Aide à identifier quand le modèle devient incertain.
+- **Dérive du modèle (Drift)** : `ml_model_drift_score` (Gauge) - Quantifie le changement dans la distribution des prédictions sur une fenêtre glissante.
 
-### 3. Metric Exposure
-The API exposes a `/api/v1/metrics` endpoint that Prometheus scrapes every 15 seconds.
+### 3. Exposition des métriques
+L'API expose un endpoint `/api/v1/metrics` que Prometheus scrape toutes les 15 secondes.
 
-- **Source**: [metrics.py](file:///Users/amaury/simplon-rag-sample/api/src/rag/api/metrics.py)
+- **Source** : [metrics.py](file:///Users/amaury/simplon-rag-sample/api/src/rag/api/metrics.py)
 
 ## Infrastructure (Prometheus & Grafana)
-The `docker-compose.yml` includes:
-- **Prometheus**: Scrapes the API and stores historical metrics.
-- **Grafana**: Visualizes the metrics. A dashboard "MailGuard Overview" is provisioned to show:
-  - Global QPS and Error Rate.
-  - Latency p50/p95 by endpoint.
-  - ML Prediction mix.
-  - Drift score over time.
+Le fichier `docker-compose.yml` inclut :
+- **Prometheus** : Récupère les métriques de l'API et stocke l'historique.
+- **Grafana** : Visualise les métriques. Un tableau de bord "MailGuard Overview" est provisionné pour afficher :
+  - Le QPS global et le taux d'erreur.
+  - La latence p50/p95 par endpoint.
+  - Le mix de prédictions ML.
+  - Le score de dérive au cours du temps.
 
-## Verification
-1. Access `http://localhost:8000/api/v1/metrics` to see the raw metrics.
-2. Access Grafana at `http://localhost:3001` (user: `admin`, pass: `admin`).
+## Vérification
+1. Accédez à `http://localhost:8000/api/v1/metrics` pour voir les métriques brutes.
+2. Accédez à Grafana sur `http://localhost:3001` (user : `admin`, pass : `admin`).

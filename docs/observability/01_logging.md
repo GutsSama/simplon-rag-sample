@@ -1,39 +1,39 @@
-# Observability: Structured Logging & Request Tracing
+# Observabilité : Logging Structuré et Traçage de Requête
 
-## Overview
-Phase 1 of the observability implementation focuses on providing a consistent and searchable logging format across all services, and establishing a way to correlate logs belonging to the same user request.
+## Aperçu
+La Phase 1 de l'implémentation de l'observabilité se concentre sur la mise en place d'un format de log cohérent et interrogeable à travers tous les services, et sur l'établissement d'un moyen de corréler les logs appartenant à une même requête utilisateur.
 
-## Implementation Details
+## Détails de l'Implémentation
 
-### 1. JSON Structured Logging
-We replaced the standard line-based logging with a JSON format using `python-json-logger`. This allows log aggregation systems (like ELK or Grafana Loki) to parse logs as structured data.
+### 1. Logging Structuré JSON
+Nous avons remplacé le logging standard par un format JSON utilisant `python-json-logger`. Cela permet aux systèmes d'agrégation de logs (comme ELK ou Grafana Loki) d'analyser les logs comme des données structurées.
 
-- **Configuration**: [logging_config.py](file:///Users/amaury/simplon-rag-sample/api/src/rag/api/logging_config.py)
-- **Fields included**:
-  - `timestamp`: UTC ISO8601 format.
-  - `level`: Log level (INFO, ERROR, etc.).
-  - `name`: Logger name (usually the module name).
-  - `message`: The actual log message.
-  - `request_id`: The correlation ID for the current request.
+- **Configuration** : [logging_config.py](file:///Users/amaury/simplon-rag-sample/api/src/rag/api/logging_config.py)
+- **Champs inclus** :
+  - `timestamp` : Format ISO8601 UTC.
+  - `level` : Niveau de log (INFO, ERROR, etc.).
+  - `name` : Nom du logger (généralement le nom du module).
+  - `message` : Le message de log réel.
+  - `request_id` : L'identifiant de corrélation pour la requête en cours.
 
-### 2. Request ID Middleware
-A FastAPI middleware was added to `app.py` to ensure every request is assigned a unique identifier.
+### 2. Middleware Request ID
+Un middleware FastAPI a été ajouté dans `app.py` pour garantir que chaque requête se voit attribuer un identifiant unique.
 
-- **Logic**:
-  1. Check for `X-Request-ID` in incoming headers.
-  2. If absent, generate a new UUID.
-  3. Store the ID in a `ContextVar` for access by the logger.
-  4. Inject the ID into the outgoing response headers.
-  5. Log the request completion with its duration and status code.
+- **Logique** :
+  1. Vérification de la présence de `X-Request-ID` dans les headers entrants.
+  2. Si absent, génération d'un nouveau UUID.
+  3. Stockage de l'ID dans une `ContextVar` pour un accès direct par le logger.
+  4. Injection de l'ID dans les headers de la réponse sortante.
+  5. Logging de la fin de requête avec sa durée et son code de statut.
 
-### 3. RGPD Compliance
-The logger is configured to **never** log the raw content of emails. Only metadata (email length, presence of attachments, etc.) and pseudonymized identifiers are allowed in production logs.
+### 3. Conformité RGPD
+Le logger est configuré pour ne **jamais** enregistrer le contenu brut des emails. Seules les métadonnées (longueur de l'email, présence de pièces jointes, etc.) et les identifiants pseudonymisés sont autorisés dans les logs de production.
 
-## Verification
-To verify the logging:
-1. Run the API.
-2. Make a request to `/api/v1/health`.
-3. Check the console output. You should see a JSON object similar to:
+## Vérification
+Pour vérifier le logging :
+1. Lancez l'API.
+2. Faites une requête sur `/api/v1/health`.
+3. Vérifiez la sortie console. Vous devriez voir un objet JSON similaire à :
    ```json
    {"timestamp": "2026-05-11T14:00:00.000Z", "level": "INFO", "name": "rag.api.app", "message": "Request processed", "request_id": "550e8400-e29b-41d4-a716-446655440000", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration": 0.0012}
    ```

@@ -1,30 +1,30 @@
-# Observability: LLM Tracing with Langfuse
+# Observabilité : Traçage LLM avec Langfuse
 
-## Overview
-Phase 3 focuses on the "black box" of LLM calls in the `/explain` endpoint. We use Langfuse to trace the internal steps of the RAG pipeline.
+## Aperçu
+La Phase 3 se concentre sur la "boîte noire" des appels LLM dans l'endpoint `/explain`. Nous utilisons Langfuse pour tracer les étapes internes du pipeline RAG.
 
-## Implementation Details
+## Détails de l'Implémentation
 
-### 1. Tracing Architecture
-We use manual instrumentation to capture high-resolution traces of our RAG process. Each request to `/explain` generates a trace containing several "Spans".
+### 1. Architecture de Traçage
+Nous utilisons une instrumentation manuelle pour capturer des traces haute résolution de notre processus RAG. Chaque requête vers `/explain` génère une trace contenant plusieurs "Spans".
 
-- **Helper**: [llm_observability.py](file:///Users/amaury/simplon-rag-sample/api/src/rag/api/llm_observability.py)
+- **Helper** : [llm_observability.py](file:///Users/amaury/simplon-rag-sample/api/src/rag/api/llm_observability.py)
 
-### 2. Instrumented Spans
-According to the brief, we capture:
-- **`retrieval`**: Time taken to search the vector database and the number of chunks found.
-- **`prompt_build`**: Captures the final prompt sent to the LLM.
-- **`llm_call`**: A "Generation" span capturing the model name, input tokens, and output content.
+### 2. Spans Instrumentés
+Conformément au brief, nous capturons :
+- **`retrieval`** : Temps pris pour interroger la base vectorielle et nombre de fragments trouvés.
+- **`prompt_build`** : Capture le prompt final envoyé au LLM.
+- **`llm_call`** : Un span de type "Generation" capturant le nom du modèle, les tokens d'entrée et le contenu de sortie.
 
-### 3. Privacy & Compliance (RGPD)
-To protect user data:
-1. **Pseudonymization**: The `user_id` provided in the request is hashed using SHA-256 before being sent to Langfuse.
-2. **Content Masking**: Only a snippet of the email content is stored in the retrieval span input to allow debugging without exposing PII.
+### 3. Confidentialité et Conformité (RGPD)
+Pour protéger les données utilisateur :
+1. **Pseudonymisation** : Le `user_id` fourni dans la requête est haché via SHA-256 avant d'être envoyé à Langfuse.
+2. **Masquage de contenu** : Seul un extrait du contenu de l'email est stocké dans l'entrée du span de récupération pour permettre le débogage sans exposer de données personnelles (PII).
 
-### 4. Cost Tracking
-Langfuse automatically calculates the cost of each request based on the model and token count. These costs are exported daily to Prometheus via a dedicated job: [export_langfuse_cost.py](file:///Users/amaury/simplon-rag-sample/api/src/rag/jobs/export_langfuse_cost.py).
+### 4. Suivi des coûts
+Langfuse calcule automatiquement le coût de chaque requête en fonction du modèle et du nombre de tokens. Ces coûts sont exportés quotidiennement vers Prometheus via un job dédié : [export_langfuse_cost.py](file:///Users/amaury/simplon-rag-sample/api/src/rag/jobs/export_langfuse_cost.py).
 
-## Verification
-1. Call the `/explain` endpoint.
-2. Log in to Langfuse at `http://localhost:3000`.
-3. Locate the `explain_email` trace. You should see the hierarchy of spans and the associated cost.
+## Vérification
+1. Appelez l'endpoint `/explain`.
+2. Connectez-vous à Langfuse sur `http://localhost:3000`.
+3. Recherchez la trace `explain_email`. Vous devriez voir la hiérarchie des spans et le coût associé.
