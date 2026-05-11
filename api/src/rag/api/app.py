@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from rag.api.routers import chat, eval, explain, health, ingestion, predict
+from rag.api.routers import chat, eval, explain, feedback, health, ingestion, predict
 from rag.config.settings import get_settings
 from rag.db.session import engine
 
@@ -73,6 +73,7 @@ def create_app() -> FastAPI:
     app.include_router(eval.router, prefix="/api/v1")
     app.include_router(predict.router, prefix="/api/v1")
     app.include_router(explain.router, prefix="/api/v1")
+    app.include_router(feedback.router, prefix="/api/v1")
     app.include_router(metrics_router, prefix="/api/v1")
 
     return app
