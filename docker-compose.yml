@@ -1,8 +1,9 @@
-# docker-compose.yml
+version: '3.8'
+
 services:
   postgres:
-    image: pgvector/pgvector:pg16   # image officielle avec pgvector inclus
-    container_name: postgres_pgvector
+    image: pgvector/pgvector:pg16
+    container_name: mailguard-db
     environment:
       POSTGRES_DB: rag_db
       POSTGRES_USER: rag_user
@@ -11,8 +12,79 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./api/data/db/init/init.sql:/docker-entrypoint-initdb.d/init.sql  # auto-exécuté au 1er démarrage
+      - ./api/data/db/init/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  api:
+    build: 
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: mailguard-api
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rag_db
+      - POSTGRES_USER=rag_user
+      - POSTGRES_PASSWORD=rag_password
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - LANGFUSE_HOST=http://langfuse:3000
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mailguard-prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules.yml:/etc/prometheus/rules.yml
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mailguard-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: unless-stopped
+
+  langfuse:
+    image: langfuse/langfuse:latest
+    container_name: mailguard-langfuse
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXTAUTH_SECRET=mysecret
+      - NEXTAUTH_URL=http://localhost:3000
+      - DATABASE_URL=postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+    depends_on:
+      - langfuse-db
+    restart: unless-stopped
+
+  langfuse-db:
+    image: postgres:16
+    container_name: mailguard-langfuse-db
+    environment:
+      - POSTGRES_USER=langfuse
+      - POSTGRES_PASSWORD=langfuse
+      - POSTGRES_DB=langfuse
+    volumes:
+      - langfuse_db_data:/var/lib/postgresql/data
     restart: unless-stopped
 
 volumes:
   pgdata:
+  grafana_data:
+  langfuse_db_data:
