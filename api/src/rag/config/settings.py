@@ -8,9 +8,9 @@ class Settings(BaseSettings):
 
     # Ollama (local LLM)
     ollama_base_url: str = "http://localhost:11434"
-    ollama_chat_model: str = "mistral-small3.2"
-    ollama_small_chat_model: str = "mistral:latest"
-    ollama_embed_model: str = "mxbai-embed-large"
+    ollama_chat_model: str = "qwen2.5:3b"
+    ollama_small_chat_model: str = "qwen2.5:0.5b"
+    ollama_embed_model: str = "nomic-embed-text:latest"
 
     # PostgreSQL
     postgres_host: str = "localhost"
