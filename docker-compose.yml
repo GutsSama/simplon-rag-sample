@@ -117,6 +117,5 @@ services:
 
 volumes:
   pgdata:
-  api_data_docs:
   api_data_eval:
   ollama_models:
