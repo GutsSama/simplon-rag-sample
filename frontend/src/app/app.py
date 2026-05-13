@@ -6,15 +6,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import httpx
 import streamlit as st
 
-from app.api_client import create_conversation, send_message
-from app.config import API_BASE_URL
-
-# --- Page config (must be first Streamlit call) ---
+# --- Page config (MUST be the first Streamlit call) ---
 st.set_page_config(
     page_title="RAG Sample — Assistant IA",
     page_icon="💬",
     layout="centered",
 )
+
+from app.api_client import create_conversation, stream_message
+from app.config import API_BASE_URL
 
 # --- Brand CSS: Space Grotesk font + chat bubble colors ---
 _USER_BUBBLE_SELECTOR = "[data-testid=\"stChatMessage\"]:has([data-testid=\"chatAvatarIcon-user\"]) [data-testid=\"stChatMessageContent\"]"  # noqa: E501
@@ -72,14 +72,17 @@ if "conversation_id" not in st.session_state:
     try:
         st.session_state.conversation_id = create_conversation(API_BASE_URL)
         st.session_state.messages = []
-    except (httpx.ConnectError, httpx.ConnectTimeout):
-        st.error("Impossible de joindre l'API. Vérifiez que le serveur FastAPI est démarré.")  # noqa: E501
+    except httpx.ConnectError as e:
+        st.error(f"🔴 Connexion refusée : {e}")
         st.stop()
     except httpx.ReadTimeout:
-        st.error("L'API a mis trop de temps à répondre. Rafraîchissez la page pour réessayer.")
+        st.error("🔴 Timeout : l'API n'a pas répondu dans les délais. Réessayez dans quelques secondes.")
         st.stop()
-    except Exception:
-        st.error("Erreur inattendue lors de la création de la conversation.")
+    except httpx.HTTPStatusError as e:
+        st.error(f"🔴 Erreur HTTP {e.response.status_code} : {e.response.text}")
+        st.stop()
+    except Exception as e:
+        st.error(f"🔴 Erreur inattendue ({type(e).__name__}) : {e}")
         st.stop()
 
 # --- Render conversation history ---
@@ -100,33 +103,32 @@ if prompt := st.chat_input("Posez votre question…"):
     with st.chat_message("assistant"):
         content: str = ""
         sources: list[str] = []
-        with st.spinner("Génération en cours…"):
-            try:
-                response = send_message(
-                    API_BASE_URL,
-                    st.session_state.conversation_id,
-                    prompt,
-                )
-                content = response["content"] or "Aucune réponse reçue."
-                sources = response.get("sources", [])
-            except httpx.HTTPStatusError as e:
-                st.error(f"Erreur API : {e.response.status_code}")
-                st.stop()
-            except httpx.ReadTimeout:
-                st.error(
-                    "L'API n'a pas répondu dans le délai imparti. La requête est "
-                    "peut-être encore en cours côté serveur — réessayez dans un "
-                    "instant ou augmentez `RAG_API_TIMEOUT_SECONDS`."
-                )
-                st.stop()
-            except (httpx.ConnectError, httpx.ConnectTimeout):
-                st.error("Impossible de joindre l'API (connexion refusée).")
-                st.stop()
-            except Exception:
-                st.error("Erreur inattendue lors de l'appel à l'API.")
-                st.stop()
+        try:
+            token_gen, meta = stream_message(
+                API_BASE_URL,
+                st.session_state.conversation_id,
+                prompt,
+            )
+            # st.write_stream streams tokens into the bubble and returns the full text
+            content = st.write_stream(token_gen)
+            sources = meta.get("sources", [])
+        except httpx.HTTPStatusError as e:
+            st.error(f"🔴 Erreur API : {e.response.status_code}")
+            st.stop()
+        except httpx.ReadTimeout:
+            st.error(
+                "🔴 L'API n'a pas répondu dans le délai imparti. La requête est "
+                "peut-être encore en cours côté serveur — réessayez dans un "
+                "instant ou augmentez `RAG_API_TIMEOUT_SECONDS`."
+            )
+            st.stop()
+        except (httpx.ConnectError, httpx.ConnectTimeout):
+            st.error("🔴 Impossible de joindre l'API (connexion refusée).")
+            st.stop()
+        except Exception as e:
+            st.error(f"🔴 Erreur inattendue ({type(e).__name__}) : {e}")
+            st.stop()
 
-        st.markdown(content)
         if sources:
             with st.expander(f"📎 Sources ({len(sources)})"):
                 for chunk_id in sources:

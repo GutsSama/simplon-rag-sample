@@ -1,6 +1,6 @@
 import os
 
-API_BASE_URL: str = os.getenv("RAG_API_URL", "http://localhost:8000")
+API_BASE_URL: str = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 # Read timeout for API calls in seconds. Generous default because the chat
 # endpoint runs the full agent graph (guard → retrieve → generate → evaluate),

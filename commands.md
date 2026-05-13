@@ -42,6 +42,19 @@ docker exec -it simplon_rag_api python -m rag.populate_metrics
 docker exec -it simplon_rag_api curl http://host.docker.internal:11434/api/tags
 ```
 
+### 3. Commandes Ollama (sur l'hôte macOS)
+```bash
+# Vérifier les modèles installés
+ollama list
+
+# Tirer les modèles requis
+ollama pull qwen2.5-coder:7b
+ollama pull mxbai-embed-large
+
+# Voir les modèles chargés en RAM/VRAM
+ollama ps
+```
+
 ### 3. Consulter les logs en temps réel
 ```bash
 docker compose logs -f api

@@ -39,6 +39,71 @@ async def send_message(
     }
 
 
+@router.post("/{conversation_id}/messages/stream")
+async def stream_message(
+    conversation_id: uuid.UUID,
+    body: MessageRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Stream tokens from the generate node using LangGraph astream_events.
+
+    Response format:
+      - Plain text token chunks during generation
+      - Final sentinel line: \n__META__{"sources": [...]}
+    """
+    import json
+    from fastapi.responses import StreamingResponse
+    from sqlalchemy import select
+
+    from rag.db.models.conversation import Conversation
+    from rag.rag.agent.graph import build_graph
+
+    result = await db.execute(
+        select(Conversation).where(Conversation.id == str(conversation_id))
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    graph = build_graph(db)
+    initial_state = {
+        "conversation_id": str(conversation_id),
+        "user_message": body.content,
+        "messages": [],
+        "retrieved_chunks": [],
+        "answer": "",
+        "sources": [],
+        "needs_retrieval": False,
+        "in_scope": True,
+        "category": "",
+        "eval_score": None,
+        "eval_decision": "",
+        "rewrite_suggestion": "",
+        "retry_count": 0,
+    }
+
+    async def generate():
+        sources: list = []
+        async for event in graph.astream_events(initial_state, version="v2"):
+            kind = event["event"]
+            node = event.get("metadata", {}).get("langgraph_node", "")
+
+            # Stream tokens only from the main generation node
+            if kind == "on_chat_model_stream" and node == "generate":
+                chunk_content = event["data"]["chunk"].content
+                if chunk_content:
+                    yield chunk_content
+
+            # Capture final state to extract sources
+            elif kind == "on_chain_end" and event.get("name") == "LangGraph":
+                final = event["data"].get("output", {})
+                sources = final.get("sources", [])
+
+        # Send metadata sentinel so the client can retrieve sources
+        yield f"\n__META__{json.dumps({'sources': sources})}"
+
+    return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
+
+
 @router.get("/{conversation_id}/messages")
 async def get_messages(
     conversation_id: uuid.UUID,

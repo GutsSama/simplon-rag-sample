@@ -26,8 +26,10 @@ both embeddings and LLM inference.
 - **Document Ingestion** - PDF upload with SHA-256 deduplication, chunking, and embedding
 - **RAG Pipeline** - Semantic retrieval via pgvector cosine similarity + LLM generation
 - **LangGraph Agent** - Stateful multi-step graph: routing, retrieval, generation, history
-- **Local Ollama** - `mxbai-embed-large` (1024 dims) for embeddings, `mistral-small3.2` for
-  generation and `mistral:latest` for fast guard/eval calls
+- **Hybrid Architecture** - Ollama runs natively on macOS (Metal GPU) for performance, while the rest of the stack (API, Frontend, Observability) runs in Docker.
+- **Streaming Tokens** - Real-time response streaming in the Streamlit UI.
+- **Local Ollama** - `qwen2.5-coder:7b` (or `mistral-small3.2`) for generation and `mxbai-embed-large` for embeddings.
+- **Full Observability** - Prometheus metrics, Grafana dashboards, Loki logs, and Langfuse tracing.
 - **PostgreSQL + pgvector** - HNSW index for fast approximate nearest-neighbour search
 - **FastAPI REST API** - 8 endpoints under `/api/v1` for ingestion, chat, and evaluation
 - **Ragas Evaluation** - Faithfulness, answer relevancy, and context recall metrics
@@ -52,11 +54,14 @@ The fastest way to spin up the full stack (Ollama + PostgreSQL + API + Streamlit
 ```bash
 # 1. Configure the environment
 cp api/.env.example api/.env
-# Edit api/.env if you want to use different models
+# Ensure OLLAMA_BASE_URL=http://host.docker.internal:11434 in api/.env
 
-# 2. Start the stack in development mode (hot reload, source bind mounts).
-#    First boot also pulls the Ollama models into the ollama_models volume —
-#    this can take several minutes depending on bandwidth.
+# 2. Ensure Ollama is running natively on your Mac (Download at ollama.com)
+# Pull the models:
+ollama pull qwen2.5-coder:7b
+ollama pull mxbai-embed-large
+
+# 3. Start the stack
 docker compose up -d
 
 # 3. Watch model pulling progress (optional)

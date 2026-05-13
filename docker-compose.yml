@@ -45,6 +45,12 @@ services:
         condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   frontend:
     build:
@@ -52,11 +58,14 @@ services:
       dockerfile: Dockerfile
     container_name: simplon_rag_frontend
     environment:
-      - API_URL=http://api:8000
+      - API_BASE_URL=http://api:8000/api/v1
     ports:
       - "8501:8501"
+    volumes:
+      - ./frontend:/app
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
   # --- OBSERVABILITY STACK ---
 
