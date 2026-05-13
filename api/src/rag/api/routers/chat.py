@@ -12,6 +12,7 @@ router = APIRouter(prefix="/conversations", tags=["chat"])
 
 class MessageRequest(BaseModel):
     content: str
+    trace_id: str | None = None
 
 
 @router.post("")
@@ -52,6 +53,7 @@ async def stream_message(
       - Final sentinel line: \n__META__{"sources": [...]}
     """
     import json
+
     from fastapi.responses import StreamingResponse
     from sqlalchemy import select
 
@@ -81,9 +83,36 @@ async def stream_message(
         "retry_count": 0,
     }
 
+    # Configure Langfuse
+    from asgi_correlation_id import correlation_id
+    from langfuse.langchain import CallbackHandler
+
+    from rag.config.settings import get_settings
+    
+    settings = get_settings()
+    config = {}
+    
+    if settings.langfuse_public_key and settings.langfuse_secret_key:
+        langfuse_handler = CallbackHandler(
+            public_key=settings.langfuse_public_key,
+        )
+        config = {
+            "callbacks": [langfuse_handler],
+            "metadata": {
+                "langfuse_user_id": str(conversation_id),
+                "langfuse_tags": [settings.app_env],
+                "langfuse_trace_name": "rag_chat_stream",
+                "correlation_id": correlation_id.get()
+            }
+        }
+        
+    if body.trace_id:
+        import uuid as _uuid
+        config["run_id"] = _uuid.UUID(body.trace_id)
+
     async def generate():
         sources: list = []
-        async for event in graph.astream_events(initial_state, version="v2"):
+        async for event in graph.astream_events(initial_state, config=config, version="v2"):
             kind = event["event"]
             node = event.get("metadata", {}).get("langgraph_node", "")
 

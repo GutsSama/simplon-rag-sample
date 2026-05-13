@@ -86,13 +86,23 @@ if "conversation_id" not in st.session_state:
         st.stop()
 
 # --- Render conversation history ---
-for msg in st.session_state.messages:
+for i, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
-        if msg["role"] == "assistant" and msg.get("sources"):
-            with st.expander(f"📎 Sources ({len(msg['sources'])})"):
-                for chunk_id in msg["sources"]:
-                    st.caption(f"Chunk : {chunk_id}")
+        if msg["role"] == "assistant":
+            if msg.get("sources"):
+                with st.expander(f"📎 Sources ({len(msg['sources'])})"):
+                    for chunk_id in msg["sources"]:
+                        st.caption(f"Chunk : {chunk_id}")
+            
+            if msg.get("trace_id"):
+                feedback = st.feedback("thumbs", key=f"fb_{i}")
+                if feedback is not None:
+                    fb_key = f"sent_fb_{msg['trace_id']}"
+                    if st.session_state.get(fb_key) != feedback:
+                        from app.api_client import send_feedback
+                        send_feedback(API_BASE_URL, msg["trace_id"], feedback)
+                        st.session_state[fb_key] = feedback
 
 # --- Handle new user input ---
 if prompt := st.chat_input("Posez votre question…"):
@@ -103,11 +113,15 @@ if prompt := st.chat_input("Posez votre question…"):
     with st.chat_message("assistant"):
         content: str = ""
         sources: list[str] = []
+        trace_id = ""
         try:
+            import uuid
+            trace_id = str(uuid.uuid4())
             token_gen, meta = stream_message(
                 API_BASE_URL,
                 st.session_state.conversation_id,
                 prompt,
+                trace_id=trace_id
             )
             # st.write_stream streams tokens into the bubble and returns the full text
             content = st.write_stream(token_gen)
@@ -134,6 +148,15 @@ if prompt := st.chat_input("Posez votre question…"):
                 for chunk_id in sources:
                     st.caption(f"Chunk : {chunk_id}")
 
+        if msg.get("trace_id"):
+            feedback = st.feedback("thumbs", key=f"fb_new_{len(st.session_state.messages)}")
+            if feedback is not None:
+                fb_key = f"sent_fb_{msg['trace_id']}"
+                if st.session_state.get(fb_key) != feedback:
+                    from app.api_client import send_feedback
+                    send_feedback(API_BASE_URL, msg["trace_id"], feedback)
+                    st.session_state[fb_key] = feedback
+
     st.session_state.messages.append(
-        {"role": "assistant", "content": content, "sources": sources}
+        {"role": "assistant", "content": content, "sources": sources, "trace_id": trace_id}
     )

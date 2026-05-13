@@ -34,7 +34,7 @@ def create_conversation(base_url: str) -> str:
 
 
 def stream_message(
-    base_url: str, conversation_id: str, content: str
+    base_url: str, conversation_id: str, content: str, trace_id: str | None = None
 ) -> tuple[Generator[str, None, None], dict]:
     """Stream tokens from the assistant response.
 
@@ -50,8 +50,12 @@ def stream_message(
     url = f"{base_url}/conversations/{conversation_id}/messages/stream"
 
     def _gen() -> Generator[str, None, None]:
+        payload = {"content": content}
+        if trace_id:
+            payload["trace_id"] = trace_id
+            
         with httpx.stream(
-            "POST", url, json={"content": content}, timeout=_timeout()
+            "POST", url, json=payload, timeout=_timeout()
         ) as response:
             response.raise_for_status()
             buffer = ""
@@ -107,3 +111,25 @@ def send_message(base_url: str, conversation_id: str, content: str) -> dict:
             "content": data.get("content", ""),
             "sources": data.get("sources", []),
         }
+
+def send_feedback(base_url: str, trace_id: str, score: int) -> bool:
+    """Send user feedback (thumbs up/down) to Langfuse via the backend API.
+    
+    Args:
+        base_url: The API base URL
+        trace_id: The trace ID associated with the generation
+        score: 1 for thumbs up, 0 for thumbs down
+        
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            response = client.post(
+                f"{base_url}/feedback",
+                json={"trace_id": trace_id, "score": score},
+            )
+            response.raise_for_status()
+            return True
+    except Exception:
+        return False
