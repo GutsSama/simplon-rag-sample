@@ -11,5 +11,5 @@ route:
 receivers:
 - name: 'discord'
   webhook_configs:
-  - url: 'https://discord.com/api/webhooks/PLACEHOLDER' # Replace with actual webhook
+  - url: 'https://discord.com/api/webhooks/1504234800771235910/ulJSBsMWOQgOWo65tos4ZRrC8hoq3uj2dx4EGwvwtYQp3ExihGtku7zrVOp66nlExWFw'
     send_resolved: true

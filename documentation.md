@@ -13,6 +13,10 @@ Le système repose sur un flux agentique piloté par **LangGraph**, permettant u
 4.  **[Logs & Loki](loki.md)** : Centralisation des logs structurés avec Promtail.
 5.  **[Tracing & Langfuse](langfuse.md)** : Observabilité profonde des flux LLM.
 6.  **[Guide des Commandes CLI](commands.md)** : Cheat sheet pour le lancement, les tests et le debug.
+7.  **[Alerting Discord](discord.md)** : Configuration Alertmanager → Discord, liste des alertes et procédure de test.
+8.  **[Runbook — Haute Latence](runbooks/high-latency-messages.md)** : Diagnostic et mitigation du p95 élevé.
+9.  **[Runbook — Taux d'Erreur](runbooks/high-error-rate.md)** : Diagnostic et mitigation des erreurs 5xx.
+10. **[Runbook — LLM Indisponible](runbooks/llm-service-down.md)** : Diagnostic et mitigation d'un service LLM down.
 
 ---
 
@@ -22,6 +26,17 @@ L'observabilité dans ce projet n'est pas seulement technique (CPU/RAM), elle es
 - **Fiabilité** : Guardrails pour rejeter les questions hors-sujet.
 - **Qualité** : Auto-évaluation par un LLM "juge" avec score de 0 à 10.
 - **Transparence** : Traces complètes de chaque étape de réflexion de l'agent.
+
+## 🔥 Chaos Engineering — Scénarios Game Day
+
+Des endpoints de simulation de panne sont disponibles pour démontrer la résilience de la stack :
+
+| Scénario | Commande |
+|----------|---------|
+| Injecter 5s de latence | `curl -X POST http://localhost:8000/api/v1/chaos/latency?ms=5000` |
+| Forcer des erreurs 500 | `curl -X POST http://localhost:8000/api/v1/chaos/error?code=500` |
+| Simuler Ollama down | `curl -X POST "http://localhost:8000/api/v1/chaos/ollama-break?broken=true"` |
+| Rétablir la normale | `curl -X POST http://localhost:8000/api/v1/chaos/latency?ms=0` |
 
 ## 🚀 Game Day Readiness
 Pour préparer la soutenance technique, un guide spécifique est disponible :

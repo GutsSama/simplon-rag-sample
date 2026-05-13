@@ -6,7 +6,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_client import make_asgi_app
 
 from rag.api.logging import configure_logging
-from rag.api.routers import chat, eval, health, ingestion
+from rag.api.routers import chat, chaos, eval, health, ingestion
 from rag.db.session import engine
 
 
@@ -34,6 +34,7 @@ def create_app() -> FastAPI:
     app.include_router(ingestion.router, prefix="/api/v1")
     app.include_router(chat.router, prefix="/api/v1")
     app.include_router(eval.router, prefix="/api/v1")
+    app.include_router(chaos.router, prefix="/api/v1")  # Chaos engineering endpoints
 
     # Prometheus metrics
     Instrumentator().instrument(app).expose(app)

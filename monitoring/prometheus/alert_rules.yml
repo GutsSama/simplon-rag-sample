@@ -11,10 +11,19 @@ groups:
       description: "P95 latency is {{ $value }}s for node {{ $labels.node_name }}."
 
   - alert: HighErrorRate
-    expr: sum(rate(http_requests_total{status="5xx"}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+    expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
     for: 1m
     labels:
       severity: critical
     annotations:
       summary: "High 5xx error rate"
       description: "Error rate is {{ $value | printf \"%.2f\" }}%."
+
+  - alert: LLMServiceDown
+    expr: up{job="ollama"} == 0 or up{job="api"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Core service down"
+      description: "Service {{ $labels.job }} is unreachable."
