@@ -100,6 +100,7 @@ services:
     container_name: simplon_rag_discord_bridge
     environment:
       - DISCORD_WEBHOOK=https://discord.com/api/webhooks/1504234800771235910/ulJSBsMWOQgOWo65tos4ZRrC8hoq3uj2dx4EGwvwtYQp3ExihGtku7zrVOp66nlExWFw
+      - DISCORD_USERNAME=RAG-ALERTS
     ports:
       - "9094:9094"
 
