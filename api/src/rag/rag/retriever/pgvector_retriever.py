@@ -21,7 +21,7 @@ async def similarity_search(
 
     query_embedding = await ollama_embeddings.embed_query(query)
 
-    sql = text("""
+    sql = text(f"""
         SELECT
             dc.id            AS chunk_id,
             dc.document_id   AS document_id,
@@ -30,8 +30,8 @@ async def similarity_search(
             dc.metadata      AS metadata,
             d.filename       AS filename,
             1 - (dc.embedding <=> CAST(:embedding AS vector)) AS score
-        FROM document_chunks dc
-        JOIN documents d ON d.id = dc.document_id
+        FROM {settings.postgres_schema}.document_chunks dc
+        JOIN {settings.postgres_schema}.documents d ON d.id = dc.document_id
         WHERE dc.embedding IS NOT NULL
         ORDER BY dc.embedding <=> CAST(:embedding AS vector)
         LIMIT :k

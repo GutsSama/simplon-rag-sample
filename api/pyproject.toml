@@ -30,6 +30,11 @@ dependencies = [
     # Config
     "pydantic-settings>=2.0",
     "pyjwt>=2.12.1",
+    "prometheus-fastapi-instrumentator>=7.1.0",
+    "asgi-correlation-id>=4.3.4",
+    "structlog>=25.5.0",
+    "langfuse>=4.6.1",
+    "alertmanager>=1.0.1",
 ]
 
 [project.optional-dependencies]

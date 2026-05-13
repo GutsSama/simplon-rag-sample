@@ -8,8 +8,8 @@ class Settings(BaseSettings):
 
     # Ollama (local LLM)
     ollama_base_url: str = "http://localhost:11434"
-    ollama_chat_model: str = "qwen3.5:4b"
-    ollama_small_chat_model: str = "qwen3.5:4b"
+    ollama_chat_model: str = "qwen2.5-coder:7b"
+    ollama_small_chat_model: str = "qwen2.5-coder:7b"
     ollama_embed_model: str = "nomic-embed-text:latest"
 
     # PostgreSQL
@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_log_level: str = "INFO"
     app_port: int = 8000
+
+    # Observability
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_host: str = "https://cloud.langfuse.com"
 
     # RAG tuning
     chunk_size: int = 512

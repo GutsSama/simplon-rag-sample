@@ -9,7 +9,7 @@ from sqlalchemy.types import TypeDecorator, UserDefinedType
 
 from rag.db.base import Base, PortableUUID
 
-EMBEDDING_DIMENSION = 1024  # mxbai-embed-large output dimension
+EMBEDDING_DIMENSION = 768  # nomic-embed-text output dimension
 
 # Use JSONB on PostgreSQL, plain JSON elsewhere (e.g. SQLite for tests)
 PortableJSON = JSON().with_variant(JSONB(), "postgresql")
@@ -44,6 +44,7 @@ class NullableVector(TypeDecorator):
 
 class Document(Base):
     __tablename__ = "documents"
+    __table_args__ = {"schema": "rag"}
 
     id: Mapped[uuid.UUID] = mapped_column(
         PortableUUID(), primary_key=True, default=uuid.uuid4
@@ -62,6 +63,7 @@ class Document(Base):
 
 class DocumentChunk(Base):
     __tablename__ = "document_chunks"
+    __table_args__ = {"schema": "rag"}
 
     id: Mapped[uuid.UUID] = mapped_column(
         PortableUUID(), primary_key=True, default=uuid.uuid4

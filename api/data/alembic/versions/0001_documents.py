@@ -13,10 +13,11 @@ depends_on = None
 
 
 def upgrade() -> None:
+    op.execute("CREATE SCHEMA IF NOT EXISTS rag")
     op.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
     op.execute("""
-        CREATE TABLE documents (
+        CREATE TABLE rag.documents (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             filename TEXT NOT NULL,
             file_hash TEXT NOT NULL UNIQUE,
@@ -26,11 +27,11 @@ def upgrade() -> None:
     """)
 
     op.execute("""
-        CREATE TABLE document_chunks (
+        CREATE TABLE rag.document_chunks (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+            document_id UUID NOT NULL REFERENCES rag.documents(id) ON DELETE CASCADE,
             content TEXT NOT NULL,
-            embedding VECTOR(1024),
+            embedding VECTOR(768),
             chunk_index INTEGER NOT NULL,
             metadata JSONB NOT NULL DEFAULT '{}',
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -39,7 +40,7 @@ def upgrade() -> None:
 
     op.execute("""
         CREATE INDEX document_chunks_embedding_idx
-            ON document_chunks
+            ON rag.document_chunks
             USING hnsw (embedding vector_cosine_ops)
             WITH (m = 16, ef_construction = 64)
     """)

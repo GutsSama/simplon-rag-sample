@@ -13,6 +13,7 @@ _settings = get_settings()
 metadata_obj = MetaData(schema=_settings.postgres_schema)
 
 
+
 class PortableUUID(TypeDecorator):
     """UUID stored natively on PostgreSQL, as VARCHAR(36) on other dialects (e.g. SQLite for tests).
 

@@ -1,0 +1,138 @@
+{
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": 2,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 7 },
+              { "color": "green", "value": 9 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rag_eval_score_sum) / sum(rag_eval_score_count)",
+          "refId": "A"
+        }
+      ],
+      "title": "Avg Eval Score",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, sum by (le, node_name) (rate(rag_node_duration_seconds_bucket[5m])))",
+          "legendFormat": "{{node_name}} p95",
+          "refId": "A"
+        }
+      ],
+      "title": "RAG Node Latency (p95)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 2,
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(rag_guard_route_total[5m])) by (category, in_scope)",
+          "refId": "A"
+        }
+      ],
+      "title": "Guard Route Traffic",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 5,
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(rag_eval_score_count[5m])) by (le)",
+          "refId": "A"
+        }
+      ],
+      "title": "Score Distribution",
+      "type": "barchart"
+    },
+    {
+      "datasource": "Loki",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "id": 6,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLog": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": "Loki",
+          "expr": "{container=\"simplon_rag_api\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "API Logs (Loki)",
+      "type": "logs"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["rag", "business"],
+  "title": "RAG Performance & Quality",
+  "uid": "rag_metrics",
+  "version": 2
+}

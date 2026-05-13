@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # Add src to path
-sys.path.append(str(Path(__file__).parent / "api" / "src"))
+sys.path.append(str(Path(__file__).parent / "src"))
 
 import httpx
 from sqlalchemy import text
@@ -22,7 +22,7 @@ async def validate_all():
     settings = get_settings()
     print(f"--- Starting RAG Validation (Branch: feature/rag-validation) ---")
     print(f"Models: Chat={settings.ollama_chat_model}, Embed={settings.ollama_embed_model}")
-    print(f"DB: {settings.postgres_host}:{settings.postgres_port}/{settings.postgres_db}")
+
 
     # 1. Connectivity
     print("\n[Step 1] Checking Ollama Connectivity...")
@@ -42,7 +42,7 @@ async def validate_all():
     # 2. Embeddings
     print("\n[Step 2] Testing Embeddings...")
     try:
-        embedding = await ollama_embeddings.aembed_query("bonjour")
+        embedding = await ollama_embeddings.embed_query("bonjour")
         print(f"OK: Embedding dimension: {len(embedding)}")
     except Exception as e:
         print(f"ERROR: Embedding failed: {e}")

@@ -1,0 +1,20 @@
+groups:
+- name: rag_alerts
+  rules:
+  - alert: HighP95Latency
+    expr: histogram_quantile(0.95, sum by (le, node_name) (rate(rag_node_duration_seconds_bucket[5m]))) > 10
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High P95 latency on node {{ $labels.node_name }}"
+      description: "P95 latency is {{ $value }}s for node {{ $labels.node_name }}."
+
+  - alert: HighErrorRate
+    expr: sum(rate(http_requests_total{status="5xx"}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High 5xx error rate"
+      description: "Error rate is {{ $value | printf \"%.2f\" }}%."

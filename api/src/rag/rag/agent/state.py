@@ -19,3 +19,8 @@ class AgentState(TypedDict):
     eval_decision: str
     rewrite_suggestion: str
     retry_count: int
+    # Instrumentation
+    guard_route_duration: float | None
+    retrieve_duration: float | None
+    generate_duration: float | None
+    evaluate_duration: float | None

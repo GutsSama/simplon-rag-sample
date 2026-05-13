@@ -14,7 +14,7 @@ depends_on = None
 
 def upgrade() -> None:
     op.execute("""
-        CREATE TABLE conversations (
+        CREATE TABLE rag.conversations (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             metadata JSONB NOT NULL DEFAULT '{}',
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -22,9 +22,9 @@ def upgrade() -> None:
     """)
 
     op.execute("""
-        CREATE TABLE messages (
+        CREATE TABLE rag.messages (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+            conversation_id UUID NOT NULL REFERENCES rag.conversations(id) ON DELETE CASCADE,
             role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
             content TEXT NOT NULL,
             sources JSONB,
@@ -34,7 +34,7 @@ def upgrade() -> None:
 
     op.execute("""
         CREATE INDEX messages_conversation_id_idx
-            ON messages (conversation_id, created_at)
+            ON rag.messages (conversation_id, created_at)
     """)
 
 
