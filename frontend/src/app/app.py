@@ -148,13 +148,13 @@ if prompt := st.chat_input("Posez votre question…"):
                 for chunk_id in sources:
                     st.caption(f"Chunk : {chunk_id}")
 
-        if msg.get("trace_id"):
+        if trace_id:
             feedback = st.feedback("thumbs", key=f"fb_new_{len(st.session_state.messages)}")
             if feedback is not None:
-                fb_key = f"sent_fb_{msg['trace_id']}"
+                fb_key = f"sent_fb_{trace_id}"
                 if st.session_state.get(fb_key) != feedback:
                     from app.api_client import send_feedback
-                    send_feedback(API_BASE_URL, msg["trace_id"], feedback)
+                    send_feedback(API_BASE_URL, trace_id, feedback)
                     st.session_state[fb_key] = feedback
 
     st.session_state.messages.append(
