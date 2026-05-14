@@ -47,6 +47,23 @@ both embeddings and LLM inference.
 | API | FastAPI + uvicorn |
 | RAG Evaluation | Ragas |
 
+## System Architecture & Workflow
+
+![AI RAG System Architecture](docs-brief/architecture_infographic.png)
+
+This project implements a robust **Retrieval-Augmented Generation (RAG)** pipeline integrated with an industrial-grade **Site Reliability Engineering (SRE) observability stack**. 
+
+**How it works (The Workflow):**
+1. **User Interface (Streamlit)**: The user submits a query. The UI generates a unique `trace_id` to track the request throughout the entire system.
+2. **Backend API (FastAPI)**: Receives the request and orchestrates the logic using LangGraph.
+3. **Knowledge Retrieval (PostgreSQL + pgvector)**: The API queries the vector database for semantically relevant chunks of pre-ingested PDF documents.
+4. **LLM Inference (Ollama)**: The retrieved context and user query are sent to a local LLM (e.g., Llama 3 or Qwen) running on GPU to generate an accurate, grounded answer.
+5. **Observability & SRE Stack**:
+   - **Langfuse**: Captures detailed traces of the LLM execution (prompts, latencies, tokens) and user feedback (👍/👎).
+   - **Promtail & Loki**: Centralizes and aggregates structured JSON logs.
+   - **Prometheus & Grafana**: Scrapes system metrics (e.g., latency, error rates) every 5 seconds and visualizes them on real-time dashboards.
+   - **Alertmanager & Discord**: If metrics breach predefined thresholds (e.g., high latency or error rates), alerts are routed to a Discord channel via a bridge.
+
 ## Quickstart with Docker
 
 The fastest way to spin up the full stack (Ollama + PostgreSQL + API + Streamlit UI):
@@ -156,10 +173,14 @@ git commit -m "feat: ..."
 
 ## Documentation
 
+All project documentation, runbooks, and SRE guidelines have been centralized in the [`docs-brief/`](docs-brief/) directory.
+
 | File | Description |
 |------|-------------|
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution guidelines |
-| [`CHANGELOG.md`](CHANGELOG.md) | Version history |
+| [`docs-brief/CONTRIBUTING.md`](docs-brief/CONTRIBUTING.md) | Contribution guidelines |
+| [`docs-brief/CHANGELOG.md`](docs-brief/CHANGELOG.md) | Version history |
+| [`docs-brief/architecture-overview.md`](docs-brief/architecture-overview.md) | Cognitive map and system overview |
+| [`docs-brief/GAME_DAY.md`](docs-brief/GAME_DAY.md) | SRE Game Day playbooks |
 
 ## License
 
