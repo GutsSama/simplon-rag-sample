@@ -96,22 +96,14 @@ services:
       - discord-bridge
       - telegram-bridge
 
-  discord-bridge:
-    image: rogerrum/alertmanager-discord:latest
-    container_name: simplon_rag_discord_bridge
-    environment:
-      - DISCORD_WEBHOOK=${DISCORD_WEBHOOK}
-      - DISCORD_USERNAME=RAG-ALERTS
-    ports:
-      - "9094:9094"
-
-  telegram-bridge:
+  alert-router:
     build:
-      context: ./monitoring/telegram-bridge
-    container_name: simplon_rag_telegram_bridge
+      context: ./monitoring/alert-router
+    container_name: simplon_rag_alert_router
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - DISCORD_WEBHOOK=${DISCORD_WEBHOOK}
     ports:
       - "9095:8080"
 
