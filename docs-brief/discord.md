@@ -10,7 +10,7 @@ Ce document détaille l'intégration d'Alertmanager avec Discord pour le projet 
 
 ## Webhook Configuré
 
-**URL** : `https://discord.com/api/webhooks/1504234800771235910/ulJSBsMWOQgOWo65tos4ZRrC8hoq3uj2dx4EGwvwtYQp3ExihGtku7zrVOp66nlExWFw`
+**URL** : Configurée dans le fichier `.env` (`DISCORD_WEBHOOK`).
 
 ## Alertes Actives
 
