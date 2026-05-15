@@ -8,6 +8,11 @@ This document outlines the scenarios to demonstrate during the technical defense
   - Dashboard `API RED`: System health (RPS, Errors, Latency).
 - **Langfuse**: [http://localhost:3000](http://localhost:3000)
   - Traceability and visual debugging of the LangGraph flow.
+
+- **Alerting**: 
+  - **Discord**: Canal principal pour les alertes critiques.
+  - **Telegram**: Canal secondaire/backup pour l'équipe SRE.
+
 - **Prometheus**: [http://localhost:9090](http://localhost:9090)
   - Alert status and raw metric exploration.
 

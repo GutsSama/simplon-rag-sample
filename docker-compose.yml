@@ -94,6 +94,7 @@ services:
       - "9093:9093"
     depends_on:
       - discord-bridge
+      - telegram-bridge
 
   discord-bridge:
     image: rogerrum/alertmanager-discord:latest
@@ -103,6 +104,16 @@ services:
       - DISCORD_USERNAME=RAG-ALERTS
     ports:
       - "9094:9094"
+
+  telegram-bridge:
+    build:
+      context: ./monitoring/telegram-bridge
+    container_name: simplon_rag_telegram_bridge
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    ports:
+      - "9095:8080"
 
   loki:
     image: grafana/loki:latest
