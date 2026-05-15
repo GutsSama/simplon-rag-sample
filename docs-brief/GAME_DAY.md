@@ -9,9 +9,10 @@ This document outlines the scenarios to demonstrate during the technical defense
 - **Langfuse**: [http://localhost:3000](http://localhost:3000)
   - Traceability and visual debugging of the LangGraph flow.
 
-- **Alerting**: 
-  - **Discord**: Canal principal pour les alertes critiques.
-  - **Telegram**: Canal secondaire/backup pour l'équipe SRE.
+- **Alerting (Intelligent Routing)**: 
+  - **Discord + Telegram** : Utilisés pour les alertes **CRITICAL** (LLM Down, Latence excessive).
+  - **Telegram uniquement** : Utilisé pour les alertes **WARNING** (Score de qualité bas) pour éviter la pollution du canal d'équipe.
+  - **Technologie** : `alert-router` personnalisé (FastAPI) piloté par Alertmanager.
 
 - **Prometheus**: [http://localhost:9090](http://localhost:9090)
   - Alert status and raw metric exploration.
