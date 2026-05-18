@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-
+from prometheus_fastapi_instrumentator import Instrumentator
 from rag.api.routers import chat, eval, health, ingestion
 from rag.db.session import engine
 
@@ -19,6 +19,9 @@ def create_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+
+    # Prometheus instrumentation
+    Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
     app.include_router(health.router, prefix="/api/v1")
     app.include_router(ingestion.router, prefix="/api/v1")

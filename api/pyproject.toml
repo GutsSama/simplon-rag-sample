@@ -30,6 +30,9 @@ dependencies = [
     # Config
     "pydantic-settings>=2.0",
     "pyjwt>=2.12.1",
+    "python-json-logger>=4.1.0",
+    "prometheus-fastapi-instrumentator>=7.1.0",
+    "langfuse<3.0.0",
 ]
 
 [project.optional-dependencies]

@@ -6,6 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from rag.db.session import get_db
 from rag.rag.chat_service import ChatService, ConversationNotFoundError
+import logging
+
+logger = logging.getLogger("rag.api.routers.chat")
 
 router = APIRouter(prefix="/conversations", tags=["chat"])
 
@@ -26,6 +29,7 @@ async def send_message(
     body: MessageRequest,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    logger.info("send_message started", extra={"conversation_id": conversation_id, "user_message": body.content})
     try:
         result = await ChatService().send_message(conversation_id, body.content, db)
     except ConversationNotFoundError:

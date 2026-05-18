@@ -8,16 +8,16 @@ class Settings(BaseSettings):
 
     # Ollama (local LLM)
     ollama_base_url: str = "http://localhost:11434"
-    ollama_chat_model: str = "mistral-small3.2"
-    ollama_small_chat_model: str = "mistral:latest"
-    ollama_embed_model: str = "mxbai-embed-large"
+    ollama_chat_model: str = "llama3.1:8b"
+    ollama_small_chat_model: str = "llama3.1:8b"
+    ollama_embed_model: str = "qwen3-embedding:0.6b"
 
     # PostgreSQL
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_db: str = "rag"
     postgres_user: str = "rag_user"
-    postgres_password: str
+    postgres_password: str = "rag_password"
     postgres_schema: str = "rag"
 
     # Application
@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # Agent
     product_name: str = "Dev IA"
     agent_max_retries: int = 2
+
+    # Langfuse
+    langfuse_secret_key: str = "sk-lf-simplon-rag-secret"
+    langfuse_public_key: str = "pk-lf-simplon-rag-public"
+    langfuse_host: str = "http://localhost:3001"
 
     @property
     def database_url(self) -> str:

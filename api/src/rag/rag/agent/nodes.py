@@ -1,10 +1,20 @@
 import json
 import re
+import logging
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from rag.config.metrics import (
+    guard_route_counter,
+    retrieve_chunks_histogram,
+    evaluate_score_histogram,
+    evaluate_decision_counter,
+    retry_counter,
+    escalate_counter,
+)
 
 from rag.rag.agent.prompts import (
     ESCALATION_RESPONSE,
@@ -20,6 +30,7 @@ from rag.config.settings import get_settings
 from rag.db.models.conversation import Conversation, Message
 from rag.rag.retriever import pgvector_retriever
 
+logger = logging.getLogger("rag.agent.nodes")
 
 def _extract_json(content: str) -> str:
     """Strip markdown code fences and extract the first JSON object from LLM output."""
@@ -71,6 +82,7 @@ async def guard_route(state: AgentState) -> dict:
     Fails open (in_scope=True, needs_retrieval=True) on any JSON parsing error
     to avoid false negatives.
     """
+    logger.info("guard_route started", extra={"user_message": state["user_message"]})
     settings = get_settings()
     llm = _get_llm(settings, model=settings.ollama_small_chat_model)
     prompt = GUARD_ROUTE_PROMPT.format(
@@ -96,6 +108,12 @@ async def guard_route(state: AgentState) -> dict:
             "answer": OUT_OF_SCOPE_RESPONSE.format(product_name=settings.product_name),
             "sources": [],
         }
+    logger.info("guard_route result", extra={"in_scope": in_scope, "category": category})
+
+    guard_route_counter.labels(
+        in_scope=str(in_scope),
+        category=category or "none"
+    ).inc()
 
     return {"in_scope": True, "needs_retrieval": needs_retrieval, "category": category}
 
@@ -107,7 +125,10 @@ async def retrieve(state: AgentState, db: AsyncSession) -> dict:
     otherwise falls back to the original user_message.
     """
     query = state.get("rewrite_suggestion") or state["user_message"]
+    logger.info("retrieve started", extra={"query": query})
     chunks = await pgvector_retriever.similarity_search(query, db)
+    retrieve_chunks_histogram.observe(len(chunks))
+    logger.info("retrieve result", extra={"retrieved_chunks": chunks})
     return {"retrieved_chunks": chunks}
 
 
@@ -124,6 +145,7 @@ async def generate(state: AgentState) -> dict:
     fed to the second generation pass.
     """
     llm = _get_llm()
+    logger.info("generate started", extra={"state": state})
 
     history_msgs = state["messages"][1:-1]
 
@@ -151,6 +173,7 @@ async def generate(state: AgentState) -> dict:
         sources = []
 
     response = await llm.ainvoke(messages_to_send)
+    logger.info("generate result", extra={"answer": response.content, "sources": sources})
     return {
         "answer": response.content,
         "sources": sources,
@@ -169,6 +192,7 @@ async def evaluate(state: AgentState) -> dict:
     regardless of score to prevent infinite loops.
     Fails open ("answer") on any JSON parsing error.
     """
+    logger.info("evaluate started", extra={"state": state})
     settings = get_settings()
     llm = _get_llm(settings, model=settings.ollama_small_chat_model)
 
@@ -194,7 +218,14 @@ async def evaluate(state: AgentState) -> dict:
         rewrite_suggestion = ""
 
     retry_count = state.get("retry_count", 0) + 1
+    logger.info("evaluate result", extra={"score": score, "decision": decision, "rewrite_suggestion": rewrite_suggestion, "retry_count": retry_count})
 
+    evaluate_score_histogram.observe(score)
+    evaluate_decision_counter.labels(decision=decision).inc()
+    if decision == "rewrite":
+        retry_counter.inc()
+
+    
     return {
         "eval_score": score,
         "eval_decision": decision,
@@ -205,6 +236,7 @@ async def evaluate(state: AgentState) -> dict:
 
 async def escalate(state: AgentState) -> dict:
     """Set a human-escalation answer when the evaluator cannot find a satisfactory response."""
+    escalate_counter.inc()
     settings = get_settings()
     return {
         "answer": ESCALATION_RESPONSE.format(

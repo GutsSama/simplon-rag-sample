@@ -1,0 +1,108 @@
+{
+  "title": "Simplon RAG Overview",
+  "uid": "simplon-rag-overview",
+  "schemaVersion": 38,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Requêtes/s par endpoint",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "sum by (handler) (rate(http_requests_total[1m]))",
+        "legendFormat": "{{handler}}"
+      }]
+    },
+    {
+      "id": 2,
+      "title": "Taux d'erreurs 5xx (%)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "sum by (handler) (rate(http_requests_total{status=~\"5xx\"}[1m])) / sum by (handler) (rate(http_requests_total[1m])) * 100",
+        "legendFormat": "{{handler}}"
+      }]
+    },
+    {
+      "id": 3,
+      "title": "Latence p50 / p95 / p99 — /messages",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_highr_seconds_bucket[1m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket[1m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_highr_seconds_bucket[1m])))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Décisions de l'évaluateur",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "sum by (decision) (rate(rag_evaluate_decision_total[1m]))",
+        "legendFormat": "{{decision}}"
+      }]
+    },
+    {
+      "id": 5,
+      "title": "Score d'évaluation moyen",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16},
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "rate(rag_evaluate_score_sum[5m]) / rate(rag_evaluate_score_count[5m])",
+        "legendFormat": "Score moyen"
+      }]
+    },
+    {
+      "id": 6,
+      "title": "Escalades totales",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 16},
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "rag_escalate_total",
+        "legendFormat": "Escalades"
+      }]
+    },
+    {
+      "id": 7,
+      "title": "Retries totaux",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 16},
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "rag_retry_total",
+        "legendFormat": "Retries"
+      }]
+    },
+    {
+      "id": 8,
+      "title": "Requêtes hors scope",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 16},
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "sum(rag_guard_route_total{in_scope=\"False\"})",
+        "legendFormat": "Hors scope"
+      }]
+    }
+  ]
+}

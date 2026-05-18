@@ -7,8 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from rag.db.models.conversation import Conversation, Message
 from rag.rag.agent.graph import build_graph
+from rag.config.tracing import get_langfuse_client, get_langfuse_handler
+import logging
 
-
+logger = logging.getLogger("rag.chat_service")
 class ConversationNotFoundError(Exception):
     pass
 
@@ -52,6 +54,15 @@ class ChatService:
         if result.scalar_one_or_none() is None:
             raise ConversationNotFoundError(conversation_id)
 
+        trace, request_id = get_langfuse_handler(
+            conversation_id=str(conversation_id),
+            user_message=content,
+        )
+
+        logger.info("send_message started", extra={
+            "conversation_id": str(conversation_id),
+            "request_id": request_id,
+        })
         graph = build_graph(db)
         final_state = await graph.ainvoke(
             {
@@ -71,6 +82,24 @@ class ChatService:
             },
         )
 
+        # Log le résultat dans la trace Langfuse
+        trace.update(
+            output=final_state.get("answer", ""),
+            metadata={
+                "conversation_id": str(conversation_id),
+                "request_id": request_id,
+                "eval_score": final_state.get("eval_score"),
+                "eval_decision": final_state.get("eval_decision"),
+                "category": final_state.get("category"),
+                "in_scope": final_state.get("in_scope"),
+            }
+        )
+        get_langfuse_client().flush()
+        logger.info("send_message done", extra={
+            "conversation_id": str(conversation_id),
+            "request_id": request_id,
+        })
+
         msg_result = await db.execute(
             select(Message)
             .where(
@@ -81,7 +110,7 @@ class ChatService:
             .limit(1)
         )
         assistant_msg = msg_result.scalar_one_or_none()
-
+        logger.info("send_message completed", extra={"conversation_id": conversation_id, "assistant_message": assistant_msg.content if assistant_msg else None})
         return MessageResult(
             message_id=assistant_msg.id if assistant_msg else None,
             role="assistant",
