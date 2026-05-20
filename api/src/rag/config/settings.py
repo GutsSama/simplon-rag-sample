@@ -6,11 +6,22 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    # Ollama (local LLM)
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_chat_model: str = "qwen2.5-coder:7b"
-    ollama_small_chat_model: str = "qwen2.5-coder:7b"
-    ollama_embed_model: str = "nomic-embed-text:latest"
+    # Mistral AI
+    mistral_api_key: str | None = None
+    mistral_chat_model: str = "mistral-large-latest"
+    mistral_small_chat_model: str = "mistral-small-latest"
+    mistral_embed_model: str = "mistral-embed"
+
+    # Storage
+    storage_provider: str = "local"  # "local", "minio", "gcs"
+    gcs_bucket_name: str = "simplon-rag-corpus"
+    minio_endpoint: str = "http://localhost:9000"
+    minio_access_key: str = "minioadmin"
+    minio_secret_key: str = "minioadmin"
+
+    # Database connection pool
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
 
     # PostgreSQL
     postgres_host: str = "localhost"

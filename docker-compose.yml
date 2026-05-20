@@ -28,7 +28,12 @@ services:
       - POSTGRES_DB=rag_db
       - POSTGRES_USER=rag_user
       - POSTGRES_PASSWORD=rag_password
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - STORAGE_PROVIDER=minio
+      - GCS_BUCKET_NAME=simplon-rag-corpus
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-pk-lf-dummy}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-sk-lf-dummy}
       - LANGFUSE_HOST=http://langfuse:3000
@@ -149,5 +154,31 @@ services:
       postgres:
         condition: service_healthy
 
+  minio:
+    image: minio/minio:latest
+    container_name: simplon_rag_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  minio-create-bucket:
+    image: minio/mc:latest
+    container_name: simplon_rag_minio_bucket
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin) do echo 'Waiting for Minio...' && sleep 1; done;
+      /usr/bin/mc mb --ignore-existing local/simplon-rag-corpus;
+      exit 0;
+      "
+
 volumes:
   postgres_data:
+  minio_data:
