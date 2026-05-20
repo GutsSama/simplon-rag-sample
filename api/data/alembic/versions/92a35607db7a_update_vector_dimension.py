@@ -22,6 +22,9 @@ def upgrade() -> None:
     """Upgrade schema."""
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
+        # Clear existing data since we cannot cast 768-dim vectors to 1024-dim
+        op.execute("DELETE FROM rag.document_chunks")
+        op.execute("DELETE FROM rag.documents")
         # Alter the embedding vector dimension to 1024
         op.execute("ALTER TABLE rag.document_chunks ALTER COLUMN embedding TYPE vector(1024)")
         # Re-create HNSW index for the 1024 dimension vector
@@ -37,6 +40,9 @@ def downgrade() -> None:
     """Downgrade schema."""
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
+        # Clear existing data to prevent type conversion errors
+        op.execute("DELETE FROM rag.document_chunks")
+        op.execute("DELETE FROM rag.documents")
         # Drop the HNSW index
         op.execute("DROP INDEX IF EXISTS rag.document_chunks_embedding_idx")
         # Revert the embedding vector dimension to 768

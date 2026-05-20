@@ -52,6 +52,48 @@ def _get_llm(settings=None, model: str | None = None, num_predict: int = 512, js
     return ChatMistralAI(**kwargs)
 
 
+def _log_llm_usage(node_name: str, model_name: str, response, duration: float):
+    # Extract usage metadata
+    usage = getattr(response, "usage_metadata", None)
+    if not usage and hasattr(response, "response_metadata"):
+        usage = response.response_metadata.get("token_usage")
+    
+    if usage:
+        if isinstance(usage, dict):
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", 0)
+        else:
+            prompt_tokens = getattr(usage, "input_tokens", 0) or getattr(usage, "prompt_tokens", 0) or 0
+            completion_tokens = getattr(usage, "output_tokens", 0) or getattr(usage, "completion_tokens", 0) or 0
+            total_tokens = getattr(usage, "total_tokens", 0) or 0
+    else:
+        prompt_tokens, completion_tokens, total_tokens = 0, 0, 0
+
+    # Pricing per 1M tokens
+    # mistral-large-latest: Input $2, Output $6
+    # mistral-small-latest / others: Input $1, Output $3
+    if "large" in model_name:
+        input_rate = 2.0
+        output_rate = 6.0
+    else:
+        input_rate = 1.0
+        output_rate = 3.0
+
+    est_cost = ((prompt_tokens * input_rate) + (completion_tokens * output_rate)) / 1_000_000.0
+
+    logger.info(
+        "llm_token_usage",
+        node_name=node_name,
+        model_name=model_name,
+        duration_seconds=duration,
+        prompt_tokens=prompt_tokens,
+        completion_tokens=completion_tokens,
+        total_tokens=total_tokens,
+        estimated_cost_usd=est_cost
+    )
+
+
 async def load_history(state: AgentState, db: AsyncSession) -> dict:
     """Load previous messages for this conversation from the DB."""
     result = await db.execute(
@@ -98,6 +140,7 @@ async def guard_route(state: AgentState) -> dict:
     ) + instruction
     response = await llm.ainvoke([HumanMessage(content=prompt)])
     duration = time.perf_counter() - start
+    _log_llm_usage("guard_route", settings.mistral_small_chat_model, response, duration)
 
     try:
         data = json.loads(_extract_json(response.content))
@@ -152,7 +195,7 @@ async def retrieve(state: AgentState, db: AsyncSession) -> dict:
 
 
 async def generate(state: AgentState) -> dict:
-    """Generate an answer using the local Ollama chat model, with optional retrieved context.
+    """Generate an answer using the Mistral AI chat model, with optional retrieved context.
 
     The previous turns of the conversation are reused as structured messages
     (HumanMessage / AIMessage) rather than flattened into the system prompt,
@@ -163,7 +206,8 @@ async def generate(state: AgentState) -> dict:
     on a rewrite loop, a failed first answer would otherwise pollute the history
     fed to the second generation pass.
     """
-    llm = _get_llm(num_predict=512)
+    settings = get_settings()
+    llm = _get_llm(settings, num_predict=512)
 
     history_msgs = state["messages"][1:-1]
 
@@ -193,6 +237,7 @@ async def generate(state: AgentState) -> dict:
     start = time.perf_counter()
     response = await llm.ainvoke(messages_to_send)
     duration = time.perf_counter() - start
+    _log_llm_usage("generate", settings.mistral_chat_model, response, duration)
     RAG_NODE_DURATION_SECONDS.labels(node_name="generate").observe(duration)
     logger.info("generation_completed", duration=duration, source_count=len(sources))
     return {
@@ -230,6 +275,7 @@ async def evaluate(state: AgentState) -> dict:
     start = time.perf_counter()
     response = await llm.ainvoke([HumanMessage(content=prompt)])
     duration = time.perf_counter() - start
+    _log_llm_usage("evaluate", settings.mistral_small_chat_model, response, duration)
 
     try:
         data = json.loads(_extract_json(response.content))

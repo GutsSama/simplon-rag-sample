@@ -57,6 +57,8 @@ async def run_evaluation(
         ground_truths.append(sample.ground_truth)
 
     # Lazy imports to keep ragas off the FastAPI startup path
+    import nest_asyncio  # noqa: PLC0415
+    nest_asyncio.apply()
     from datasets import Dataset  # noqa: PLC0415
     from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings  # noqa: PLC0415
     from ragas import evaluate  # noqa: PLC0415
@@ -94,6 +96,7 @@ async def run_evaluation(
         metrics=[faithfulness, answer_relevancy, context_recall],
         llm=judge_llm,
         embeddings=judge_embed,
+        raise_exceptions=False,
     )
     scores = result.to_pandas().mean(numeric_only=True).to_dict()
 

@@ -84,7 +84,7 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     ports:
-      - "9090:9090"
+      - "9092:9090"
     depends_on:
       - alertmanager
 
@@ -98,8 +98,7 @@ services:
     ports:
       - "9093:9093"
     depends_on:
-      - discord-bridge
-      - telegram-bridge
+      - alert-router
 
   alert-router:
     build:
@@ -144,10 +143,10 @@ services:
     image: langfuse/langfuse:2
     container_name: simplon_rag_langfuse
     ports:
-      - "3000:3000"
+      - "3002:3000"
     environment:
       - DATABASE_URL=postgresql://rag_user:rag_password@postgres:5432/rag_db
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_URL=http://localhost:3002
       - NEXTAUTH_SECRET=mysecret
       - SALT=mysalt
     depends_on:

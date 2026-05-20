@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from rag.config.settings import get_settings
-from rag.rag.embeddings import ollama_embeddings
+from rag.rag.embeddings.embeddings import embed_query
 from rag.rag.ingestion.pipeline import ingest_pdf
 from rag.rag.retriever import pgvector_retriever
 from rag.rag.agent.nodes import _get_llm
@@ -21,28 +21,33 @@ from langchain_core.messages import HumanMessage
 async def validate_all():
     settings = get_settings()
     print(f"--- Starting RAG Validation (Branch: feature/rag-validation) ---")
-    print(f"Models: Chat={settings.ollama_chat_model}, Embed={settings.ollama_embed_model}")
+    print(f"Models: Chat={settings.mistral_chat_model}, Embed={settings.mistral_embed_model}")
 
 
     # 1. Connectivity
-    print("\n[Step 1] Checking Ollama Connectivity...")
+    print("\n[Step 1] Checking Mistral AI Connectivity...")
+    if not settings.mistral_api_key:
+        print("ERROR: MISTRAL_API_KEY is not set in settings")
+        return
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get(f"{settings.ollama_base_url}/api/tags")
+            resp = await client.get(
+                "https://api.mistral.ai/v1/models",
+                headers={"Authorization": f"Bearer {settings.mistral_api_key}"}
+            )
             resp.raise_for_status()
-            tags = resp.json().get("models", [])
-            tag_names = [t["name"] for t in tags]
-            print(f"OK: Found models: {tag_names}")
-            if settings.ollama_chat_model not in tag_names and f"{settings.ollama_chat_model}:latest" not in tag_names:
-                print(f"WARNING: {settings.ollama_chat_model} not found in Ollama list")
+            models = [m["id"] for m in resp.json().get("data", [])]
+            print(f"OK: Connected to Mistral AI. Found {len(models)} models.")
+            if settings.mistral_chat_model not in models:
+                print(f"WARNING: {settings.mistral_chat_model} not found in Mistral models list")
     except Exception as e:
-        print(f"ERROR: Could not connect to Ollama: {e}")
+        print(f"ERROR: Could not connect to Mistral AI: {e}")
         return
 
     # 2. Embeddings
     print("\n[Step 2] Testing Embeddings...")
     try:
-        embedding = await ollama_embeddings.embed_query("bonjour")
+        embedding = await embed_query("bonjour")
         print(f"OK: Embedding dimension: {len(embedding)}")
     except Exception as e:
         print(f"ERROR: Embedding failed: {e}")
