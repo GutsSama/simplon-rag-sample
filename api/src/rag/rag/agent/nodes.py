@@ -3,7 +3,7 @@ import re
 import time
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_ollama import ChatOllama
+from langchain_mistralai import ChatMistralAI
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,18 +38,18 @@ def _extract_json(content: str) -> str:
     return match.group(0) if match else content
 
 
-def _get_llm(settings=None, model: str | None = None, num_predict: int = 512, json_mode: bool = False) -> ChatOllama:
+def _get_llm(settings=None, model: str | None = None, num_predict: int = 512, json_mode: bool = False) -> ChatMistralAI:
     s = settings or get_settings()
     kwargs = {
-        "model": model or s.ollama_chat_model,
-        "base_url": s.ollama_base_url,
-        "num_predict": num_predict,
+        "model": model or s.mistral_chat_model,
+        "mistral_api_key": s.mistral_api_key,
+        "max_tokens": num_predict,
         "temperature": 0,
     }
     if json_mode:
-        kwargs["format"] = "json"
+        kwargs["model_kwargs"] = {"response_format": {"type": "json_object"}}
     
-    return ChatOllama(**kwargs)
+    return ChatMistralAI(**kwargs)
 
 
 async def load_history(state: AgentState, db: AsyncSession) -> dict:
@@ -89,7 +89,7 @@ async def guard_route(state: AgentState) -> dict:
     """
     start = time.perf_counter()
     settings = get_settings()
-    llm = _get_llm(settings, model=settings.ollama_small_chat_model, num_predict=64, json_mode=True)
+    llm = _get_llm(settings, model=settings.mistral_small_chat_model, num_predict=64, json_mode=True)
     # Explicitly disable thinking in the prompt
     instruction = "\nIMPORTANT: Do not think out loud. Do not use <thought> tags. Provide ONLY the JSON output."
     prompt = GUARD_ROUTE_PROMPT.format(
@@ -215,7 +215,7 @@ async def evaluate(state: AgentState) -> dict:
     Fails open ("answer") on any JSON parsing error.
     """
     settings = get_settings()
-    llm = _get_llm(settings, model=settings.ollama_small_chat_model, num_predict=64, json_mode=True)
+    llm = _get_llm(settings, model=settings.mistral_small_chat_model, num_predict=64, json_mode=True)
 
     context_summary = "\n".join(
         f"- [{c['filename']}]: {c['content'][:100]}..."

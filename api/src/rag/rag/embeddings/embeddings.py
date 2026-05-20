@@ -1,16 +1,16 @@
 from functools import lru_cache
 
-from langchain_ollama import OllamaEmbeddings
+from langchain_mistralai import MistralAIEmbeddings
 
 from rag.config.settings import get_settings
 
 
 @lru_cache
-def get_embeddings() -> OllamaEmbeddings:
+def get_embeddings() -> MistralAIEmbeddings:
     settings = get_settings()
-    return OllamaEmbeddings(
-        model=settings.ollama_embed_model,
-        base_url=settings.ollama_base_url,
+    return MistralAIEmbeddings(
+        model=settings.mistral_embed_model,
+        mistral_api_key=settings.mistral_api_key,
     )
 
 

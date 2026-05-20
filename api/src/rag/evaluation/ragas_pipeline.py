@@ -58,7 +58,7 @@ async def run_evaluation(
 
     # Lazy imports to keep ragas off the FastAPI startup path
     from datasets import Dataset  # noqa: PLC0415
-    from langchain_ollama import ChatOllama, OllamaEmbeddings  # noqa: PLC0415
+    from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings  # noqa: PLC0415
     from ragas import evaluate  # noqa: PLC0415
     from ragas.llms import LangchainLLMWrapper  # noqa: PLC0415
     from ragas.embeddings import LangchainEmbeddingsWrapper  # noqa: PLC0415
@@ -68,15 +68,15 @@ async def run_evaluation(
 
     settings = get_settings()
     judge_llm = LangchainLLMWrapper(
-        ChatOllama(
-            model=settings.ollama_chat_model,
-            base_url=settings.ollama_base_url,
+        ChatMistralAI(
+            model=settings.mistral_chat_model,
+            mistral_api_key=settings.mistral_api_key,
         )
     )
     judge_embed = LangchainEmbeddingsWrapper(
-        OllamaEmbeddings(
-            model=settings.ollama_embed_model,
-            base_url=settings.ollama_base_url,
+        MistralAIEmbeddings(
+            model=settings.mistral_embed_model,
+            mistral_api_key=settings.mistral_api_key,
         )
     )
 

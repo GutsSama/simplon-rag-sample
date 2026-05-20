@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from rag.config.settings import get_settings
 from rag.db.models.document import Document, DocumentChunk
-from rag.rag.embeddings import ollama_embeddings
+from rag.rag.embeddings import embeddings
 from rag.rag.ingestion.chunker import chunk_texts
 from rag.rag.ingestion.pdf_loader import load_pdf
 from rag.rag.ingestion.web_loader import load_url
@@ -70,7 +70,7 @@ async def ingest_url(url: str, db: AsyncSession, max_pages: int | None = None) -
 
     # Embed all chunks in one batch call
     texts = [c["content"] for c in chunks]
-    embeddings = await ollama_embeddings.embed_documents(texts)
+    embs = await embeddings.embed_documents(texts)
 
     db_chunks = [
         DocumentChunk(
@@ -80,7 +80,7 @@ async def ingest_url(url: str, db: AsyncSession, max_pages: int | None = None) -
             chunk_index=chunk["chunk_index"],
             metadata_=chunk["metadata"],
         )
-        for chunk, embedding in zip(chunks, embeddings)
+        for chunk, embedding in zip(chunks, embs)
     ]
     db.add_all(db_chunks)
     await db.commit()
@@ -127,7 +127,7 @@ async def ingest_pdf(file_path: str | Path, db: AsyncSession) -> IngestionResult
 
     # Embed all chunks in one batch call
     texts = [c["content"] for c in chunks]
-    embeddings = await ollama_embeddings.embed_documents(texts)
+    embs = await embeddings.embed_documents(texts)
 
     db_chunks = [
         DocumentChunk(
@@ -137,7 +137,7 @@ async def ingest_pdf(file_path: str | Path, db: AsyncSession) -> IngestionResult
             chunk_index=chunk["chunk_index"],
             metadata_=chunk["metadata"],
         )
-        for chunk, embedding in zip(chunks, embeddings)
+        for chunk, embedding in zip(chunks, embs)
     ]
     db.add_all(db_chunks)
     await db.commit()
