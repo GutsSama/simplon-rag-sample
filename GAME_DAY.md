@@ -35,9 +35,10 @@ This document outlines the scenarios to demonstrate during the technical defense
 
 ### Scenario C: Latency Spike (Stress Test)
 **Goal**: Trigger the `HighP95Latency` alert.
-1. **Simulation**: Run 20 requests in parallel using the traffic script or a loop:
+1. **Simulation**: Run parallel requests using the dedicated traffic script:
    ```bash
-   for i in {1..20}; do curl -X POST "http://localhost:8000/api/chat/send" -H "Content-Type: application/json" -d '{"message": "Test latency", "conversation_id": "stress-test"}' & done
+   # Depuis la racine du projet, lancez le benchmark (20 requêtes, 4 en parallèle)
+   uv run bench.py --messages 20 --concurrency 4
    ```
 2. **Expected Observability Signals**:
    - **Grafana**: "RAG Node Latency (p95)" panel turns **RED** (threshold > 10s).
@@ -56,6 +57,19 @@ This document outlines the scenarios to demonstrate during the technical defense
    - **Alertmanager**: `HighErrorRate` alert triggers.
    - **Loki**: Search for `level="error"` or `SQLAlchemy` to see connection exceptions.
    - **Action**: Restart Postgres: `docker start simplon_rag_postgres`. System recovers automatically.
+
+### Scenario E: LLM Budget Exceeded (3rd Alert Demo)
+**Goal**: Demonstrate the cost monitoring system and Prometheus integration.
+1. **Simulation**: Execute the Langfuse cost exporter job manually to push the day's total to the pushgateway.
+   ```bash
+   # Depuis la racine du projet
+   uv run jobs/export_langfuse_cost.py
+   ```
+   *(Alternative : modifiez le script pour pousser une valeur factice de 50€ pour forcer l'alerte).*
+2. **Expected Observability Signals**:
+   - **Prometheus**: Metric `llm_daily_cost_euros` appears with the exact cost in €.
+   - **Alertmanager**: `LLMDailyCostExceeded` triggers (if cost > 20€).
+   - **Action**: Explain the mitigation process defined in `runbooks/llm-budget-exceeded.md` (e.g. switching back to local Ollama).
 
 ---
 
