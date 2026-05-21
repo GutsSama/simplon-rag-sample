@@ -1,0 +1,139 @@
+name: CD Pipeline (Deploy to GCP)
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  GCP_REGION: ${{ vars.GCP_REGION }}
+  GCP_REGISTRY: ${{ vars.GCP_REGION }}-docker.pkg.dev
+  WIF_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  SA_EMAIL: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+  DB_INSTANCE: ${{ vars.GCP_PROJECT_ID }}:${{ vars.GCP_REGION }}:simplon-rag-db-instance
+
+jobs:
+  deploy:
+    name: Build, Push & Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    
+    # Required permissions for WIF OIDC
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.SA_EMAIL }}
+          token_format: 'access_token'
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.GCP_REGISTRY }} --quiet
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build and Push API Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api
+          push: true
+          tags: |
+            ${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/rag/api:latest
+            ${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/rag/api:${{ steps.vars.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/rag/frontend:latest
+            ${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/rag/frontend:${{ steps.vars.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # --- Database Migration ---
+      - name: Setup Cloud SQL Proxy
+        uses: GoogleCloudPlatform/cloud-sql-proxy-action@v1.33.2
+        with:
+          instances: ${{ env.DB_INSTANCE }}
+          
+      - name: Setup Python & UV for Migration
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      
+      - name: Run DB Migration (Alembic)
+        working-directory: ./api
+        env:
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: rag_user
+          POSTGRES_DB: rag
+        run: |
+          uv sync --frozen
+          # Fetch POSTGRES_PASSWORD from Secret Manager during runtime to avoid exposing it
+          export POSTGRES_PASSWORD=$(gcloud secrets versions access latest --secret="POSTGRES_PASSWORD")
+          uv run alembic upgrade head
+
+      # --- Deploy to Cloud Run ---
+      - name: Deploy API to Cloud Run
+        run: |
+          gcloud run deploy simplon-rag-api \
+            --image=${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/rag/api:${{ steps.vars.outputs.sha_short }} \
+            --region=${{ env.GCP_REGION }} \
+            --service-account=cloudrun-runtime@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
+            --add-cloudsql-instances=${{ env.DB_INSTANCE }} \
+            --update-env-vars="APP_ENV=production,STORAGE_PROVIDER=gcs,POSTGRES_HOST=/cloudsql/${{ env.DB_INSTANCE }},POSTGRES_USER=rag_user,POSTGRES_DB=rag" \
+            --update-secrets="MISTRAL_API_KEY=MISTRAL_API_KEY:latest,POSTGRES_PASSWORD=POSTGRES_PASSWORD:latest,JWT_SECRET=JWT_SECRET:latest" \
+            --allow-unauthenticated \
+            --port=8000 \
+            --memory=512Mi \
+            --cpu=1 \
+            --min-instances=1 \
+            --no-cpu-throttling
+
+      - name: Deploy Frontend to Cloud Run
+        run: |
+          # Fetch the newly deployed API URL to configure the frontend
+          API_URL=$(gcloud run services describe simplon-rag-api --region=${{ env.GCP_REGION }} --format="value(status.url)")
+          
+          gcloud run deploy simplon-rag-frontend \
+            --image=${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/rag/frontend:${{ steps.vars.outputs.sha_short }} \
+            --region=${{ env.GCP_REGION }} \
+            --service-account=cloudrun-runtime@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
+            --update-env-vars="API_BASE_URL=${API_URL}/api/v1" \
+            --allow-unauthenticated \
+            --port=8501 \
+            --memory=512Mi \
+            --cpu=1
+
+      - name: Post-Deploy Healthcheck
+        run: |
+          API_URL=$(gcloud run services describe simplon-rag-api --region=${{ env.GCP_REGION }} --format="value(status.url)")
+          echo "Checking health endpoint at $API_URL/api/v1/health"
+          curl -f -s -S "${API_URL}/api/v1/health"
