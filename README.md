@@ -181,6 +181,8 @@ All project documentation, runbooks, and SRE guidelines have been centralized in
 | [`docs-brief/CHANGELOG.md`](docs-brief/CHANGELOG.md) | Version history |
 | [`docs-brief/architecture-overview.md`](docs-brief/architecture-overview.md) | Cognitive map and system overview |
 | [`docs-brief/GAME_DAY.md`](docs-brief/GAME_DAY.md) | SRE Game Day playbooks |
+| [`GCP_WIF_AND_CICD.md`](GCP_WIF_AND_CICD.md) | Guide configuration WIF, Cloud Run et IAM |
+| [`VALIDATION_CICD_WIF.md`](VALIDATION_CICD_WIF.md) | Rapport de validation de l'architecture CI/CD DevOps |
 
 ## License
 
