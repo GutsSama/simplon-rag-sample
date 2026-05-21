@@ -1,4 +1,5 @@
 from unittest.mock import AsyncMock, patch
+
 import pytest
 from httpx import AsyncClient
 
@@ -28,7 +29,9 @@ async def test_health_ready_success(async_client: AsyncClient):
     mock_response.status_code = 200
 
     with patch("rag.api.routers.health.get_settings", return_value=mock_settings):
-        with patch("httpx.AsyncClient.get", return_value=mock_response):
+        with patch("rag.api.routers.health.httpx.AsyncClient") as mock_client_class:
+            mock_client_instance = mock_client_class.return_value.__aenter__.return_value
+            mock_client_instance.get.return_value = mock_response
             response = await async_client.get("/api/v1/health/ready")
             assert response.status_code == 200
             assert response.json() == {"status": "ready"}
@@ -45,7 +48,9 @@ async def test_health_ready_unhealthy_mistral(async_client: AsyncClient):
     mock_response.status_code = 500
 
     with patch("rag.api.routers.health.get_settings", return_value=mock_settings):
-        with patch("httpx.AsyncClient.get", return_value=mock_response):
+        with patch("rag.api.routers.health.httpx.AsyncClient") as mock_client_class:
+            mock_client_instance = mock_client_class.return_value.__aenter__.return_value
+            mock_client_instance.get.return_value = mock_response
             response = await async_client.get("/api/v1/health/ready")
             assert response.status_code == 503
             data = response.json()

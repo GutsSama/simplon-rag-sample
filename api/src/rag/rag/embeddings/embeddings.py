@@ -1,9 +1,12 @@
+import time
 from functools import lru_cache
 
+import structlog
 from langchain_mistralai import MistralAIEmbeddings
 
 from rag.config.settings import get_settings
 
+logger = structlog.get_logger()
 
 @lru_cache
 def get_embeddings() -> MistralAIEmbeddings:
@@ -12,12 +15,6 @@ def get_embeddings() -> MistralAIEmbeddings:
         model=settings.mistral_embed_model,
         mistral_api_key=settings.mistral_api_key,
     )
-
-
-import time
-import structlog
-
-logger = structlog.get_logger()
 
 async def embed_documents(texts: list[str]) -> list[list[float]]:
     start = time.perf_counter()
