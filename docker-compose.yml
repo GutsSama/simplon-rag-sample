@@ -153,6 +153,12 @@ services:
       postgres:
         condition: service_healthy
 
+  pushgateway:
+    image: prom/pushgateway:latest
+    container_name: simplon_rag_pushgateway
+    ports:
+      - "9091:9091"
+
   minio:
     image: minio/minio:latest
     container_name: simplon_rag_minio

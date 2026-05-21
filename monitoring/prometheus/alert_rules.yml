@@ -27,3 +27,12 @@ groups:
     annotations:
       summary: "Core service down"
       description: "Service {{ $labels.job }} is unreachable."
+
+  - alert: LLMDailyCostExceeded
+    expr: llm_daily_cost_euros > 20
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Budget LLM quotidien dépassé"
+      description: "Le coût LLM quotidien est de {{ $value }} € (seuil: 20 €). Vérifier Langfuse."
