@@ -65,10 +65,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=prod-builder /opt/venv /opt/venv
-COPY --from=prod-builder /app /app
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+# Create a non-privileged user and group
+RUN groupadd -g 10001 appgroup && \
+    useradd -u 10001 -g appgroup -d /app -s /sbin/bash appuser
+
+COPY --from=prod-builder --chown=appuser:appgroup /opt/venv /opt/venv
+COPY --from=prod-builder --chown=appuser:appgroup /app /app
+COPY --chown=appuser:appgroup docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+USER appuser
 
 EXPOSE 8000
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

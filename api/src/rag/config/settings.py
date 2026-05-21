@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     # Database connection pool
     db_pool_size: int = 5
     db_max_overflow: int = 10
+    db_pool_recycle: int = 300
 
     # PostgreSQL
     postgres_host: str = "localhost"
@@ -35,6 +36,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_log_level: str = "INFO"
     app_port: int = 8000
+    cors_allowed_origins: str = "http://localhost:5173,http://localhost:4173"
 
     # Observability
     langfuse_public_key: str | None = None
@@ -55,6 +57,13 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
+        if self.postgres_host.startswith("/"):
+            import urllib.parse
+            encoded_host = urllib.parse.quote_plus(self.postgres_host)
+            return (
+                f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
+                f"@/{self.postgres_db}?host={encoded_host}"
+            )
         return (
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
@@ -62,6 +71,13 @@ class Settings(BaseSettings):
 
     @property
     def database_url_sync(self) -> str:
+        if self.postgres_host.startswith("/"):
+            import urllib.parse
+            encoded_host = urllib.parse.quote_plus(self.postgres_host)
+            return (
+                f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
+                f"@/{self.postgres_db}?host={encoded_host}"
+            )
         return (
             f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
