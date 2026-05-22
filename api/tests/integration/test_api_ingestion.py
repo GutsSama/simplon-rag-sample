@@ -24,6 +24,7 @@ async def test_ingest_rejects_non_pdf(async_client: AsyncClient):
 @pytest.mark.asyncio
 async def test_delete_unknown_document(async_client: AsyncClient):
     import uuid
+
     fake_id = str(uuid.uuid4())
     response = await async_client.delete(f"/api/v1/documents/{fake_id}")
     assert response.status_code == 404
@@ -33,12 +34,14 @@ async def test_delete_unknown_document(async_client: AsyncClient):
 async def test_ingest_urls_returns_results(async_client: AsyncClient):
     with patch(
         "rag.api.routers.ingestion.ingest_url",
-        new=AsyncMock(return_value=MagicMock(
-            document_id="00000000-0000-0000-0000-000000000001",
-            filename="https://example.com",
-            chunks_created=3,
-            already_existed=False,
-        )),
+        new=AsyncMock(
+            return_value=MagicMock(
+                document_id="00000000-0000-0000-0000-000000000001",
+                filename="https://example.com",
+                chunks_created=3,
+                already_existed=False,
+            )
+        ),
     ):
         response = await async_client.post(
             "/api/v1/documents/ingest-urls",
@@ -73,12 +76,14 @@ async def test_ingest_urls_invalid_url_returns_422(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_ingest_urls_passes_max_pages(async_client: AsyncClient):
-    mock_ingest = AsyncMock(return_value=MagicMock(
-        document_id="00000000-0000-0000-0000-000000000001",
-        filename="https://example.com",
-        chunks_created=3,
-        already_existed=False,
-    ))
+    mock_ingest = AsyncMock(
+        return_value=MagicMock(
+            document_id="00000000-0000-0000-0000-000000000001",
+            filename="https://example.com",
+            chunks_created=3,
+            already_existed=False,
+        )
+    )
     with patch("rag.api.routers.ingestion.ingest_url", new=mock_ingest):
         response = await async_client.post(
             "/api/v1/documents/ingest-urls",

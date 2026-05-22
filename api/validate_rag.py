@@ -7,22 +7,24 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent / "src"))
 
 import httpx
+from langchain_core.messages import HumanMessage
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from rag.config.settings import get_settings
+from rag.rag.agent.nodes import _get_llm
 from rag.rag.embeddings.embeddings import embed_query
 from rag.rag.ingestion.pipeline import ingest_pdf
 from rag.rag.retriever import pgvector_retriever
-from rag.rag.agent.nodes import _get_llm
-from langchain_core.messages import HumanMessage
+
 
 async def validate_all():
     settings = get_settings()
-    print(f"--- Starting RAG Validation (Branch: feature/rag-validation) ---")
-    print(f"Models: Chat={settings.mistral_chat_model}, Embed={settings.mistral_embed_model}")
-
+    print("--- Starting RAG Validation (Branch: feature/rag-validation) ---")
+    print(
+        f"Models: Chat={settings.mistral_chat_model}, Embed={settings.mistral_embed_model}"
+    )
 
     # 1. Connectivity
     print("\n[Step 1] Checking Mistral AI Connectivity...")
@@ -33,13 +35,15 @@ async def validate_all():
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.get(
                 "https://api.mistral.ai/v1/models",
-                headers={"Authorization": f"Bearer {settings.mistral_api_key}"}
+                headers={"Authorization": f"Bearer {settings.mistral_api_key}"},
             )
             resp.raise_for_status()
             models = [m["id"] for m in resp.json().get("data", [])]
             print(f"OK: Connected to Mistral AI. Found {len(models)} models.")
             if settings.mistral_chat_model not in models:
-                print(f"WARNING: {settings.mistral_chat_model} not found in Mistral models list")
+                print(
+                    f"WARNING: {settings.mistral_chat_model} not found in Mistral models list"
+                )
     except Exception as e:
         print(f"ERROR: Could not connect to Mistral AI: {e}")
         return
@@ -59,7 +63,9 @@ async def validate_all():
     try:
         async with async_session() as session:
             await session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-            result = await session.execute(text("SELECT extname FROM pg_extension WHERE extname = 'vector'"))
+            result = await session.execute(
+                text("SELECT extname FROM pg_extension WHERE extname = 'vector'")
+            )
             if result.scalar():
                 print("OK: pgvector extension active")
             else:
@@ -80,7 +86,9 @@ async def validate_all():
         try:
             async with async_session() as session:
                 result = await ingest_pdf(test_pdf, session)
-                print(f"OK: Ingested {result.filename}, created {result.chunks_created} chunks (already existed: {result.already_existed})")
+                print(
+                    f"OK: Ingested {result.filename}, created {result.chunks_created} chunks (already existed: {result.already_existed})"
+                )
         except Exception as e:
             print(f"ERROR: Ingestion failed: {e}")
 
@@ -107,10 +115,12 @@ async def validate_all():
     await engine.dispose()
     print("\n--- Validation Complete ---")
 
+
 if __name__ == "__main__":
     # Ensure env vars are loaded for local run if not in docker
     if os.path.exists(".env"):
         from dotenv import load_dotenv
+
         load_dotenv()
-    
+
     asyncio.run(validate_all())

@@ -2,11 +2,20 @@ import json
 import re
 import time
 
+import structlog
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_mistralai import ChatMistralAI
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from rag.config.settings import get_settings
+from rag.db.models.conversation import Conversation, Message
+from rag.monitoring.metrics import (
+    RAG_ESCALATION_TOTAL,
+    RAG_EVAL_SCORE,
+    RAG_GUARD_ROUTE_TOTAL,
+    RAG_NODE_DURATION_SECONDS,
+)
 from rag.rag.agent.prompts import (
     ESCALATION_RESPONSE,
     EVALUATOR_PROMPT,
@@ -17,16 +26,7 @@ from rag.rag.agent.prompts import (
     SYSTEM_PROMPT,
 )
 from rag.rag.agent.state import AgentState
-from rag.config.settings import get_settings
-from rag.db.models.conversation import Conversation, Message
 from rag.rag.retriever import pgvector_retriever
-from rag.monitoring.metrics import (
-    RAG_GUARD_ROUTE_TOTAL,
-    RAG_ESCALATION_TOTAL,
-    RAG_NODE_DURATION_SECONDS,
-    RAG_EVAL_SCORE,
-)
-import structlog
 
 logger = structlog.get_logger()
 
@@ -38,7 +38,12 @@ def _extract_json(content: str) -> str:
     return match.group(0) if match else content
 
 
-def _get_llm(settings=None, model: str | None = None, num_predict: int = 512, json_mode: bool = False) -> ChatMistralAI:
+def _get_llm(
+    settings=None,
+    model: str | None = None,
+    num_predict: int = 512,
+    json_mode: bool = False,
+) -> ChatMistralAI:
     s = settings or get_settings()
     kwargs = {
         "model": model or s.mistral_chat_model,
@@ -48,7 +53,7 @@ def _get_llm(settings=None, model: str | None = None, num_predict: int = 512, js
     }
     if json_mode:
         kwargs["model_kwargs"] = {"response_format": {"type": "json_object"}}
-    
+
     return ChatMistralAI(**kwargs)
 
 
@@ -57,15 +62,23 @@ def _log_llm_usage(node_name: str, model_name: str, response, duration: float):
     usage = getattr(response, "usage_metadata", None)
     if not usage and hasattr(response, "response_metadata"):
         usage = response.response_metadata.get("token_usage")
-    
+
     if usage:
         if isinstance(usage, dict):
             prompt_tokens = usage.get("prompt_tokens", 0)
             completion_tokens = usage.get("completion_tokens", 0)
             total_tokens = usage.get("total_tokens", 0)
         else:
-            prompt_tokens = getattr(usage, "input_tokens", 0) or getattr(usage, "prompt_tokens", 0) or 0
-            completion_tokens = getattr(usage, "output_tokens", 0) or getattr(usage, "completion_tokens", 0) or 0
+            prompt_tokens = (
+                getattr(usage, "input_tokens", 0)
+                or getattr(usage, "prompt_tokens", 0)
+                or 0
+            )
+            completion_tokens = (
+                getattr(usage, "output_tokens", 0)
+                or getattr(usage, "completion_tokens", 0)
+                or 0
+            )
             total_tokens = getattr(usage, "total_tokens", 0) or 0
     else:
         prompt_tokens, completion_tokens, total_tokens = 0, 0, 0
@@ -80,7 +93,9 @@ def _log_llm_usage(node_name: str, model_name: str, response, duration: float):
         input_rate = 1.0
         output_rate = 3.0
 
-    est_cost = ((prompt_tokens * input_rate) + (completion_tokens * output_rate)) / 1_000_000.0
+    est_cost = (
+        (prompt_tokens * input_rate) + (completion_tokens * output_rate)
+    ) / 1_000_000.0
 
     logger.info(
         "llm_token_usage",
@@ -90,7 +105,7 @@ def _log_llm_usage(node_name: str, model_name: str, response, duration: float):
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
         total_tokens=total_tokens,
-        estimated_cost_usd=est_cost
+        estimated_cost_usd=est_cost,
     )
 
 
@@ -131,13 +146,21 @@ async def guard_route(state: AgentState) -> dict:
     """
     start = time.perf_counter()
     settings = get_settings()
-    llm = _get_llm(settings, model=settings.mistral_small_chat_model, num_predict=64, json_mode=True)
+    llm = _get_llm(
+        settings,
+        model=settings.mistral_small_chat_model,
+        num_predict=64,
+        json_mode=True,
+    )
     # Explicitly disable thinking in the prompt
     instruction = "\nIMPORTANT: Do not think out loud. Do not use <thought> tags. Provide ONLY the JSON output."
-    prompt = GUARD_ROUTE_PROMPT.format(
-        product_name=settings.product_name,
-        user_message=state["user_message"],
-    ) + instruction
+    prompt = (
+        GUARD_ROUTE_PROMPT.format(
+            product_name=settings.product_name,
+            user_message=state["user_message"],
+        )
+        + instruction
+    )
     response = await llm.ainvoke([HumanMessage(content=prompt)])
     duration = time.perf_counter() - start
     _log_llm_usage("guard_route", settings.mistral_small_chat_model, response, duration)
@@ -147,16 +170,14 @@ async def guard_route(state: AgentState) -> dict:
         in_scope = bool(data.get("in_scope", True))
         needs_retrieval = bool(data.get("needs_retrieval", True))
         category = str(data.get("category", ""))
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         in_scope = True
         needs_retrieval = True
         category = ""
 
     RAG_NODE_DURATION_SECONDS.labels(node_name="guard_route").observe(duration)
     RAG_GUARD_ROUTE_TOTAL.labels(
-        category=category,
-        in_scope=str(in_scope),
-        needs_retrieval=str(needs_retrieval)
+        category=category, in_scope=str(in_scope), needs_retrieval=str(needs_retrieval)
     ).inc()
 
     if not in_scope:
@@ -169,7 +190,9 @@ async def guard_route(state: AgentState) -> dict:
             "guard_route_duration": duration,
         }
 
-    logger.info("guard_route_completed", category=category, in_scope=in_scope, duration=duration)
+    logger.info(
+        "guard_route_completed", category=category, in_scope=in_scope, duration=duration
+    )
 
     return {
         "in_scope": True,
@@ -260,12 +283,20 @@ async def evaluate(state: AgentState) -> dict:
     Fails open ("answer") on any JSON parsing error.
     """
     settings = get_settings()
-    llm = _get_llm(settings, model=settings.mistral_small_chat_model, num_predict=64, json_mode=True)
+    llm = _get_llm(
+        settings,
+        model=settings.mistral_small_chat_model,
+        num_predict=64,
+        json_mode=True,
+    )
 
-    context_summary = "\n".join(
-        f"- [{c['filename']}]: {c['content'][:100]}..."
-        for c in (state.get("retrieved_chunks") or [])
-    ) or "Aucun contexte récupéré."
+    context_summary = (
+        "\n".join(
+            f"- [{c['filename']}]: {c['content'][:100]}..."
+            for c in (state.get("retrieved_chunks") or [])
+        )
+        or "Aucun contexte récupéré."
+    )
 
     prompt = EVALUATOR_PROMPT.format(
         question=state["user_message"],
@@ -282,7 +313,7 @@ async def evaluate(state: AgentState) -> dict:
         score = float(data.get("score", 10))
         decision = str(data.get("decision", "answer"))
         rewrite_suggestion = str(data.get("rewrite_suggestion", ""))
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         score = 10.0
         decision = "answer"
         rewrite_suggestion = ""
@@ -291,7 +322,9 @@ async def evaluate(state: AgentState) -> dict:
 
     RAG_NODE_DURATION_SECONDS.labels(node_name="evaluate").observe(duration)
     RAG_EVAL_SCORE.observe(score)
-    logger.info("evaluation_completed", score=score, decision=decision, duration=duration)
+    logger.info(
+        "evaluation_completed", score=score, decision=decision, duration=duration
+    )
 
     return {
         "eval_score": score,
@@ -338,7 +371,11 @@ async def save_turn(state: AgentState, db: AsyncSession) -> dict:
     conversation = result.scalar_one_or_none()
     if conversation:
         from sqlalchemy import func
-        conversation.metadata_ = {**conversation.metadata_, "last_updated": str(func.now())}
+
+        conversation.metadata_ = {
+            **conversation.metadata_,
+            "last_updated": str(func.now()),
+        }
 
     await db.commit()
     return {}

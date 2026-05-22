@@ -2,10 +2,10 @@ import uuid
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, Text, func
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.types import TypeDecorator, UserDefinedType
+from sqlalchemy.types import TypeDecorator
 
 from rag.db.base import Base, PortableUUID
 
@@ -38,6 +38,7 @@ class NullableVector(TypeDecorator):
     def process_result_value(self, value, dialect):
         if dialect.name != "postgresql" and value is not None:
             import ast
+
             return ast.literal_eval(value)
         return value
 
@@ -51,7 +52,9 @@ class Document(Base):
     )
     filename: Mapped[str] = mapped_column(Text, nullable=False)
     file_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    metadata_: Mapped[dict] = mapped_column("metadata", PortableJSON, nullable=False, default=dict)
+    metadata_: Mapped[dict] = mapped_column(
+        "metadata", PortableJSON, nullable=False, default=dict
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -72,9 +75,13 @@ class DocumentChunk(Base):
         PortableUUID(), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    embedding: Mapped[list[float] | None] = mapped_column(NullableVector(EMBEDDING_DIMENSION), nullable=True)
+    embedding: Mapped[list[float] | None] = mapped_column(
+        NullableVector(EMBEDDING_DIMENSION), nullable=True
+    )
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
-    metadata_: Mapped[dict] = mapped_column("metadata", PortableJSON, nullable=False, default=dict)
+    metadata_: Mapped[dict] = mapped_column(
+        "metadata", PortableJSON, nullable=False, default=dict
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

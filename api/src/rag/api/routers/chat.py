@@ -88,10 +88,10 @@ async def stream_message(
     from langfuse.langchain import CallbackHandler
 
     from rag.config.settings import get_settings
-    
+
     settings = get_settings()
     config = {}
-    
+
     if settings.langfuse_public_key and settings.langfuse_secret_key:
         langfuse_handler = CallbackHandler(
             public_key=settings.langfuse_public_key,
@@ -102,17 +102,20 @@ async def stream_message(
                 "langfuse_user_id": str(conversation_id),
                 "langfuse_tags": [settings.app_env],
                 "langfuse_trace_name": "rag_chat_stream",
-                "correlation_id": correlation_id.get()
-            }
+                "correlation_id": correlation_id.get(),
+            },
         }
-        
+
     if body.trace_id:
         import uuid as _uuid
+
         config["run_id"] = _uuid.UUID(body.trace_id)
 
     async def generate():
         sources: list = []
-        async for event in graph.astream_events(initial_state, config=config, version="v2"):
+        async for event in graph.astream_events(
+            initial_state, config=config, version="v2"
+        ):
             kind = event["event"]
             node = event.get("metadata", {}).get("langgraph_node", "")
 

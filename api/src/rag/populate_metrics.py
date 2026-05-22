@@ -1,8 +1,9 @@
 import asyncio
+
 import httpx
-import uuid
 
 API_URL = "http://localhost:8000/api/v1"
+
 
 async def populate():
     print("--- Waiting for API to be healthy ---")
@@ -36,21 +37,21 @@ async def populate():
             "Comment obtenir un financement ?",
             "Parle-moi de la vie des apprenants.",
             "C'est quoi le programme ?",
-            "Merci, au revoir !"
+            "Merci, au revoir !",
         ]
 
         for msg in messages:
             print(f"Sending message: '{msg}'...")
             resp = await client.post(
-                f"{API_URL}/conversations/{conv_id}/messages",
-                json={"content": msg}
+                f"{API_URL}/conversations/{conv_id}/messages", json={"content": msg}
             )
             if resp.status_code == 200:
                 print(f"OK: Response received ({len(resp.json()['content'])} chars)")
             else:
                 print(f"ERROR: {resp.status_code} - {resp.text}")
-            
+
     print("\n--- Traffic Generation Complete ---")
+
 
 if __name__ == "__main__":
     asyncio.run(populate())

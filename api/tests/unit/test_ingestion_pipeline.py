@@ -1,10 +1,9 @@
-import hashlib
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from rag.rag.ingestion.pipeline import _compute_hash, ingest_pdf, _hash_url, ingest_url
+from rag.rag.ingestion.pipeline import _compute_hash, _hash_url, ingest_pdf, ingest_url
 
 
 def test_compute_hash_is_deterministic(tmp_path: Path):
@@ -75,7 +74,10 @@ async def test_ingest_url_idempotent(mock_embeddings):
     mock_result.scalar_one_or_none.return_value = mock_doc
     mock_db.execute.return_value = mock_result
 
-    with patch("rag.rag.ingestion.pipeline.load_url", return_value=(["text"], {"source": "https://example.com", "pages_crawled": 1})):
+    with patch(
+        "rag.rag.ingestion.pipeline.load_url",
+        return_value=(["text"], {"source": "https://example.com", "pages_crawled": 1}),
+    ):
         result = await ingest_url("https://example.com", mock_db)
 
     assert result.already_existed is True
@@ -91,7 +93,13 @@ async def test_ingest_url_new_document(mock_embeddings):
     mock_result.scalar_one_or_none.return_value = None
     mock_db.execute.return_value = mock_result
 
-    with patch("rag.rag.ingestion.pipeline.load_url", return_value=(["page text"], {"source": "https://example.com", "pages_crawled": 1})):
+    with patch(
+        "rag.rag.ingestion.pipeline.load_url",
+        return_value=(
+            ["page text"],
+            {"source": "https://example.com", "pages_crawled": 1},
+        ),
+    ):
         result = await ingest_url("https://example.com", mock_db)
 
     assert result.already_existed is False

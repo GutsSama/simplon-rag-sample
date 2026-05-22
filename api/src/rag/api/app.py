@@ -7,8 +7,8 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from rag.api.logging import configure_logging
 from rag.api.routers import chaos, chat, eval, feedback, health, ingestion
-from rag.db.session import engine
 from rag.config.settings import get_settings
+from rag.db.session import engine
 
 
 @asynccontextmanager
@@ -33,7 +33,11 @@ def create_app() -> FastAPI:
 
     # CORS configuration
     settings = get_settings()
-    origins = [origin.strip() for origin in settings.cors_allowed_origins.split(",") if origin.strip()]
+    origins = [
+        origin.strip()
+        for origin in settings.cors_allowed_origins.split(",")
+        if origin.strip()
+    ]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
@@ -51,7 +55,7 @@ def create_app() -> FastAPI:
 
     # Prometheus metrics
     Instrumentator().instrument(app).expose(app)
-    
+
     @app.get("/test-endpoint")
     def test_endpoint():
         return {"status": "ok"}

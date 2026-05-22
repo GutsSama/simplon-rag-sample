@@ -38,21 +38,25 @@ async def ingest_urls(
     for url in request.urls:
         try:
             result = await ingest_url(str(url), db, max_pages=request.max_pages)
-            results.append({
-                "document_id": str(result.document_id),
-                "filename": result.filename,
-                "chunks_created": result.chunks_created,
-                "already_existed": result.already_existed,
-                "error": None,
-            })
+            results.append(
+                {
+                    "document_id": str(result.document_id),
+                    "filename": result.filename,
+                    "chunks_created": result.chunks_created,
+                    "already_existed": result.already_existed,
+                    "error": None,
+                }
+            )
         except ValueError as e:
-            results.append({
-                "document_id": None,
-                "filename": str(url),
-                "chunks_created": 0,
-                "already_existed": False,
-                "error": str(e),
-            })
+            results.append(
+                {
+                    "document_id": None,
+                    "filename": str(url),
+                    "chunks_created": 0,
+                    "already_existed": False,
+                    "error": str(e),
+                }
+            )
     return results
 
 
@@ -76,7 +80,9 @@ async def ingest_document(
     try:
         # Check if file already exists in database using SHA-256
         file_hash = compute_hash(tmp_path)
-        result_db = await db.execute(select(Document).where(Document.file_hash == file_hash))
+        result_db = await db.execute(
+            select(Document).where(Document.file_hash == file_hash)
+        )
         existing = result_db.scalar_one_or_none()
 
         if existing is not None:
@@ -136,8 +142,11 @@ async def delete_document(
     except Exception as e:
         # Log error but don't fail database document deletion if storage is out of sync
         import structlog
+
         logger = structlog.get_logger()
-        logger.error("failed_to_delete_remote_file", filename=doc.filename, error=str(e))
+        logger.error(
+            "failed_to_delete_remote_file", filename=doc.filename, error=str(e)
+        )
 
     await db.delete(doc)
     await db.commit()

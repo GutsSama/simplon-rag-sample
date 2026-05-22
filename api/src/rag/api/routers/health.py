@@ -1,10 +1,11 @@
+import httpx
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-import httpx
-import structlog
-from rag.db.session import get_db
+
 from rag.config.settings import get_settings
+from rag.db.session import get_db
 
 logger = structlog.get_logger()
 router = APIRouter(tags=["health"])
@@ -42,7 +43,7 @@ async def readiness(db: AsyncSession = Depends(get_db)) -> dict:
             async with httpx.AsyncClient(timeout=2.0) as client:
                 response = await client.get(
                     "https://api.mistral.ai/v1/models",
-                    headers={"Authorization": f"Bearer {settings.mistral_api_key}"}
+                    headers={"Authorization": f"Bearer {settings.mistral_api_key}"},
                 )
                 if response.status_code != 200:
                     errors["mistral_api"] = f"unhealthy (status={response.status_code})"
@@ -55,7 +56,7 @@ async def readiness(db: AsyncSession = Depends(get_db)) -> dict:
     if errors:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={"status": "unready", "components": errors}
+            detail={"status": "unready", "components": errors},
         )
 
     return {"status": "ready"}

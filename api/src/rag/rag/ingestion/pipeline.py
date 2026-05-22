@@ -36,7 +36,9 @@ def _hash_url(url: str) -> str:
     return hashlib.sha256(normalized.encode()).hexdigest()
 
 
-async def ingest_url(url: str, db: AsyncSession, max_pages: int | None = None) -> IngestionResult:
+async def ingest_url(
+    url: str, db: AsyncSession, max_pages: int | None = None
+) -> IngestionResult:
     """Ingest a web URL recursively into the vector store.
 
     Idempotent: re-ingesting the same URL (same normalized URL hash) is a no-op.

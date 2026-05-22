@@ -1,23 +1,29 @@
 import re
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from rag.config.settings import Settings
 from rag.rag.ingestion.web_loader import load_url
 
 
 def test_default_web_max_pages():
-    with patch.dict("os.environ", {
-        "POSTGRES_PASSWORD": "x",
-    }):
+    with patch.dict(
+        "os.environ",
+        {
+            "POSTGRES_PASSWORD": "x",
+        },
+    ):
         s = Settings()
         assert s.web_max_pages == 100
 
 
 def test_web_max_pages_override():
-    with patch.dict("os.environ", {
-        "POSTGRES_PASSWORD": "x",
-        "WEB_MAX_PAGES": "50",
-    }):
+    with patch.dict(
+        "os.environ",
+        {
+            "POSTGRES_PASSWORD": "x",
+            "WEB_MAX_PAGES": "50",
+        },
+    ):
         s = Settings()
         assert s.web_max_pages == 50
 
@@ -34,13 +40,13 @@ def _make_fake_docs(urls_and_texts: list[tuple[str, str]]):
 
 
 def test_load_url_returns_texts_and_metadata():
-    fake_docs = _make_fake_docs([
-        ("https://example.com", "Hello world"),
-        ("https://example.com/about", "About page"),
-    ])
-    with patch(
-        "rag.rag.ingestion.web_loader.RecursiveUrlLoader"
-    ) as MockLoader:
+    fake_docs = _make_fake_docs(
+        [
+            ("https://example.com", "Hello world"),
+            ("https://example.com/about", "About page"),
+        ]
+    )
+    with patch("rag.rag.ingestion.web_loader.RecursiveUrlLoader") as MockLoader:
         MockLoader.return_value.load.return_value = fake_docs
         texts, metadata = load_url("https://example.com", max_pages=10)
 
@@ -50,12 +56,10 @@ def test_load_url_returns_texts_and_metadata():
 
 
 def test_load_url_respects_max_pages():
-    fake_docs = _make_fake_docs([
-        ("https://example.com", f"Page {i}") for i in range(20)
-    ])
-    with patch(
-        "rag.rag.ingestion.web_loader.RecursiveUrlLoader"
-    ) as MockLoader:
+    fake_docs = _make_fake_docs(
+        [("https://example.com", f"Page {i}") for i in range(20)]
+    )
+    with patch("rag.rag.ingestion.web_loader.RecursiveUrlLoader") as MockLoader:
         MockLoader.return_value.load.return_value = fake_docs
         texts, metadata = load_url("https://example.com", max_pages=5)
 
@@ -64,9 +68,7 @@ def test_load_url_respects_max_pages():
 
 
 def test_load_url_passes_correct_params_to_loader():
-    with patch(
-        "rag.rag.ingestion.web_loader.RecursiveUrlLoader"
-    ) as MockLoader:
+    with patch("rag.rag.ingestion.web_loader.RecursiveUrlLoader") as MockLoader:
         MockLoader.return_value.load.return_value = []
         load_url("https://example.com/path", max_pages=42)
 

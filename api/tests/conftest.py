@@ -5,11 +5,11 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+import rag.db.models.conversation  # noqa: F401
+import rag.db.models.document  # noqa: F401 — register models
 from rag.api.app import create_app
 from rag.db.base import Base
 from rag.db.session import get_db
-import rag.db.models.document  # noqa: F401 — register models
-import rag.db.models.conversation  # noqa: F401
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -40,8 +40,16 @@ async def db_session(setup_test_db) -> AsyncGenerator[AsyncSession, None]:
 def mock_embeddings():
     """Return fixed-dimension zero vectors instead of calling the Mistral AI embed model."""
     dummy = [[0.0] * 1024]
-    with patch("rag.rag.embeddings.embeddings.embed_documents", new=AsyncMock(return_value=dummy)), \
-         patch("rag.rag.embeddings.embeddings.embed_query", new=AsyncMock(return_value=[0.0] * 1024)):
+    with (
+        patch(
+            "rag.rag.embeddings.embeddings.embed_documents",
+            new=AsyncMock(return_value=dummy),
+        ),
+        patch(
+            "rag.rag.embeddings.embeddings.embed_query",
+            new=AsyncMock(return_value=[0.0] * 1024),
+        ),
+    ):
         yield
 
 
@@ -49,5 +57,7 @@ def mock_embeddings():
 async def async_client(db_session: AsyncSession):
     app = create_app()
     app.dependency_overrides[get_db] = lambda: db_session
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         yield client

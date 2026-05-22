@@ -5,9 +5,9 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from rag.config.settings import get_settings
 from rag.db.models.conversation import Conversation, Message
 from rag.rag.agent.graph import build_graph
-from rag.config.settings import get_settings
 
 
 class ConversationNotFoundError(Exception):
@@ -53,13 +53,13 @@ class ChatService:
         if result.scalar_one_or_none() is None:
             raise ConversationNotFoundError(conversation_id)
 
-        from langfuse.langchain import CallbackHandler
         from asgi_correlation_id import correlation_id
-        
+        from langfuse.langchain import CallbackHandler
+
         settings = get_settings()
         langfuse_handler = None
         config = {}
-        
+
         if settings.langfuse_public_key and settings.langfuse_secret_key:
             langfuse_handler = CallbackHandler(
                 public_key=settings.langfuse_public_key,
@@ -70,8 +70,8 @@ class ChatService:
                     "langfuse_user_id": str(conversation_id),
                     "langfuse_tags": [settings.app_env],
                     "langfuse_trace_name": "rag_chat",
-                    "correlation_id": correlation_id.get()
-                }
+                    "correlation_id": correlation_id.get(),
+                },
             }
 
         graph = build_graph(db)
@@ -91,7 +91,7 @@ class ChatService:
                 "rewrite_suggestion": "",
                 "retry_count": 0,
             },
-            config=config
+            config=config,
         )
 
         msg_result = await db.execute(

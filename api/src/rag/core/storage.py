@@ -1,9 +1,10 @@
-import os
 from pathlib import Path
+
 import boto3
+import structlog
 from botocore.client import Config
 from google.cloud import storage
-import structlog
+
 from rag.config.settings import get_settings
 
 logger = structlog.get_logger()
@@ -48,7 +49,12 @@ class StorageClient:
         if not local_path.exists():
             raise FileNotFoundError(f"Local file does not exist: {local_path}")
 
-        logger.info("uploading_file", provider=self.provider, local_path=str(local_path), remote_name=remote_name)
+        logger.info(
+            "uploading_file",
+            provider=self.provider,
+            local_path=str(local_path),
+            remote_name=remote_name,
+        )
 
         if self.provider == "gcs":
             bucket = self.gcs_client.bucket(self.bucket_name)
@@ -64,6 +70,7 @@ class StorageClient:
             dest_path = self.local_dir / remote_name
             dest_path.parent.mkdir(parents=True, exist_ok=True)
             import shutil
+
             shutil.copy2(local_path, dest_path)
             return str(dest_path)
 
@@ -72,7 +79,12 @@ class StorageClient:
         local_destination = Path(local_destination)
         local_destination.parent.mkdir(parents=True, exist_ok=True)
 
-        logger.info("downloading_file", provider=self.provider, remote_name=remote_name, dest=str(local_destination))
+        logger.info(
+            "downloading_file",
+            provider=self.provider,
+            remote_name=remote_name,
+            dest=str(local_destination),
+        )
 
         if self.provider == "gcs":
             bucket = self.gcs_client.bucket(self.bucket_name)
@@ -80,13 +92,18 @@ class StorageClient:
             blob.download_to_filename(str(local_destination))
 
         elif self.provider == "minio":
-            self.s3_client.download_file(self.bucket_name, remote_name, str(local_destination))
+            self.s3_client.download_file(
+                self.bucket_name, remote_name, str(local_destination)
+            )
 
         elif self.provider == "local":
             src_path = self.local_dir / remote_name
             if not src_path.exists():
-                raise FileNotFoundError(f"Remote (local dir) file does not exist: {src_path}")
+                raise FileNotFoundError(
+                    f"Remote (local dir) file does not exist: {src_path}"
+                )
             import shutil
+
             shutil.copy2(src_path, local_destination)
 
     def list_files(self) -> list[str]:
@@ -107,7 +124,11 @@ class StorageClient:
                 return []
 
         elif self.provider == "local":
-            return [str(p.relative_to(self.local_dir)) for p in self.local_dir.rglob("*") if p.is_file()]
+            return [
+                str(p.relative_to(self.local_dir))
+                for p in self.local_dir.rglob("*")
+                if p.is_file()
+            ]
 
     def delete_file(self, remote_name: str) -> None:
         """Delete a file from the storage provider."""

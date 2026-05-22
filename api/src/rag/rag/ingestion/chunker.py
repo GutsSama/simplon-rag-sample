@@ -21,7 +21,11 @@ def chunk_texts(pages: list[str], source_metadata: dict | None = None) -> list[d
 
     base_metadata = source_metadata or {}
     return [
-        {"content": text, "chunk_index": i, "metadata": {**base_metadata, "chunk_index": i}}
+        {
+            "content": text,
+            "chunk_index": i,
+            "metadata": {**base_metadata, "chunk_index": i},
+        }
         for i, text in enumerate(raw_chunks)
         if text.strip()
     ]

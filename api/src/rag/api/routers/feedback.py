@@ -37,11 +37,13 @@ async def submit_feedback(body: FeedbackRequest):
         )
         # Flush to ensure the event is dispatched immediately
         langfuse.flush()
-        
+
         logger.info("feedback_submitted", trace_id=body.trace_id, score=body.score)
 
     except Exception as e:
         logger.error("langfuse_feedback_error", error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to submit feedback to Langfuse")
+        raise HTTPException(
+            status_code=500, detail="Failed to submit feedback to Langfuse"
+        )
 
     return {"status": "ok", "trace_id": body.trace_id, "score": body.score}

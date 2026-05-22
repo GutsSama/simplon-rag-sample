@@ -11,7 +11,10 @@ def configure_logging():
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
         # Add correlation ID to all logs
-        lambda _, __, event_dict: {**event_dict, "correlation_id": correlation_id.get()},
+        lambda _, __, event_dict: {
+            **event_dict,
+            "correlation_id": correlation_id.get(),
+        },
     ]
 
     if sys.stderr.isatty():

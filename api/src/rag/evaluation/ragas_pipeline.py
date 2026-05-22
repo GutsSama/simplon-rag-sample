@@ -53,18 +53,25 @@ async def run_evaluation(
 
         questions.append(sample.question)
         answers.append(state["answer"])
-        contexts.append([c["content"] for c in state.get("retrieved_chunks", [])] or [""])
+        contexts.append(
+            [c["content"] for c in state.get("retrieved_chunks", [])] or [""]
+        )
         ground_truths.append(sample.ground_truth)
 
     # Lazy imports to keep ragas off the FastAPI startup path
     import nest_asyncio  # noqa: PLC0415
+
     nest_asyncio.apply()
     from datasets import Dataset  # noqa: PLC0415
     from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings  # noqa: PLC0415
     from ragas import evaluate  # noqa: PLC0415
-    from ragas.llms import LangchainLLMWrapper  # noqa: PLC0415
     from ragas.embeddings import LangchainEmbeddingsWrapper  # noqa: PLC0415
-    from ragas.metrics import answer_relevancy, context_recall, faithfulness  # noqa: PLC0415
+    from ragas.llms import LangchainLLMWrapper  # noqa: PLC0415
+    from ragas.metrics import (  # noqa: PLC0415
+        answer_relevancy,
+        context_recall,
+        faithfulness,
+    )
 
     from rag.config.settings import get_settings  # noqa: PLC0415
 

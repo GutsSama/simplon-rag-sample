@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from dataclasses import dataclass, field
 import hashlib
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from sqlalchemy import select
@@ -36,7 +36,9 @@ def _compute_hash(file_path: Path) -> str:
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Ingest PDF files into the vector store")
+    parser = argparse.ArgumentParser(
+        description="Ingest PDF files into the vector store"
+    )
     parser.add_argument(
         "--docs-dir",
         type=Path,
@@ -77,7 +79,9 @@ async def _run(docs_dir: Path) -> None:
             try:
                 # 1. Compute hash and check database to prevent unnecessary work
                 file_hash = _compute_hash(pdf)
-                result_db = await db.execute(select(Document).where(Document.file_hash == file_hash))
+                result_db = await db.execute(
+                    select(Document).where(Document.file_hash == file_hash)
+                )
                 existing = result_db.scalar_one_or_none()
 
                 if existing is not None:
@@ -105,7 +109,9 @@ async def _run(docs_dir: Path) -> None:
                 print(f"[ERROR] {pdf.name} — {exc}")
                 summary.errors += 1
 
-    print(f"\nDone. Ingested: {summary.ingested}, Skipped: {summary.skipped}, Errors: {summary.errors}")
+    print(
+        f"\nDone. Ingested: {summary.ingested}, Skipped: {summary.skipped}, Errors: {summary.errors}"
+    )
 
 
 def main() -> None:

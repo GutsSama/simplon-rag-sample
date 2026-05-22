@@ -45,7 +45,10 @@ def _load_samples(path: Path) -> list[EvaluationSample]:
     if not data:
         print(f"Samples file is empty: {path}", file=sys.stderr)
         sys.exit(1)
-    return [EvaluationSample(question=s["question"], ground_truth=s["ground_truth"]) for s in data]
+    return [
+        EvaluationSample(question=s["question"], ground_truth=s["ground_truth"])
+        for s in data
+    ]
 
 
 async def _run(samples_path: Path) -> None:

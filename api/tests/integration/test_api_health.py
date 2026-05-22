@@ -30,7 +30,9 @@ async def test_health_ready_success(async_client: AsyncClient):
 
     with patch("rag.api.routers.health.get_settings", return_value=mock_settings):
         with patch("rag.api.routers.health.httpx.AsyncClient") as mock_client_class:
-            mock_client_instance = mock_client_class.return_value.__aenter__.return_value
+            mock_client_instance = (
+                mock_client_class.return_value.__aenter__.return_value
+            )
             mock_client_instance.get.return_value = mock_response
             response = await async_client.get("/api/v1/health/ready")
             assert response.status_code == 200
@@ -49,7 +51,9 @@ async def test_health_ready_unhealthy_mistral(async_client: AsyncClient):
 
     with patch("rag.api.routers.health.get_settings", return_value=mock_settings):
         with patch("rag.api.routers.health.httpx.AsyncClient") as mock_client_class:
-            mock_client_instance = mock_client_class.return_value.__aenter__.return_value
+            mock_client_instance = (
+                mock_client_class.return_value.__aenter__.return_value
+            )
             mock_client_instance.get.return_value = mock_response
             response = await async_client.get("/api/v1/health/ready")
             assert response.status_code == 503
