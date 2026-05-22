@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./api
-        run: uv sync --frozen
+        run: uv sync --frozen --all-extras
 
       - name: Lint (Ruff)
         working-directory: ./api
