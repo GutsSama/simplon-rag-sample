@@ -23,6 +23,7 @@ services:
       target: dev
     container_name: simplon_rag_api
     environment:
+      - RUN_DB_MIGRATIONS=true
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=rag_db

@@ -171,12 +171,24 @@ uv run yamllint .
 git commit -m "feat: ..."
 ```
 
+## Déploiement GCP (production)
+
+| Service | URL |
+|---------|-----|
+| **API (backend)** | https://simplon-rag-api-hohepdhnvq-ew.a.run.app |
+| **Frontend (Streamlit)** | https://simplon-rag-frontend-hohepdhnvq-ew.a.run.app |
+
+Guide complet (étapes, commandes, incidents, corrections) : **[`GCP_DEPLOYMENT.md`](GCP_DEPLOYMENT.md)**.
+
+Checklist rapide : [`scripts/DEPLOY_PHASE1.md`](scripts/DEPLOY_PHASE1.md).
+
 ## Documentation
 
 All project documentation, runbooks, and SRE guidelines have been centralized in the [`docs-brief/`](docs-brief/) directory.
 
 | File | Description |
 |------|-------------|
+| [`GCP_DEPLOYMENT.md`](GCP_DEPLOYMENT.md) | **Rapport final déploiement GCP** (URLs, commandes, problèmes/solutions) |
 | [`docs-brief/CONTRIBUTING.md`](docs-brief/CONTRIBUTING.md) | Contribution guidelines |
 | [`docs-brief/CHANGELOG.md`](docs-brief/CHANGELOG.md) | Version history |
 | [`docs-brief/architecture-overview.md`](docs-brief/architecture-overview.md) | Cognitive map and system overview |

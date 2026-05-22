@@ -43,7 +43,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 8000
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Shell form so ${PORT:-8000} is expanded (Cloud Run injects PORT=8080)
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --reload
 
 # --- Prod builder: compile deps and install project (no dev) ---
 FROM builder AS prod-builder
@@ -76,6 +77,11 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 USER appuser
 
+ENV APP_ENV=production \
+    RUN_DB_MIGRATIONS=false \
+    WEB_CONCURRENCY=1
+
 EXPOSE 8000
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+# Shell form so ${PORT:-8000} is expanded (Cloud Run injects PORT=8080)
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-1}

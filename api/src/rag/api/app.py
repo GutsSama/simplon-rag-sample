@@ -14,7 +14,8 @@ from rag.db.session import _get_engine
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
-    await _get_engine().dispose()
+    if _get_engine.cache_info().currsize > 0:
+        await _get_engine().dispose()
 
 
 def create_app() -> FastAPI:

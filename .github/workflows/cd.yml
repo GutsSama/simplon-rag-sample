@@ -93,7 +93,7 @@ jobs:
           POSTGRES_HOST: 127.0.0.1
           POSTGRES_PORT: 5432
           POSTGRES_USER: rag_user
-          POSTGRES_DB: rag
+          POSTGRES_DB: rag_db
         run: |
           uv sync --frozen
           # Fetch POSTGRES_PASSWORD from Secret Manager during runtime to avoid exposing it
@@ -108,7 +108,7 @@ jobs:
             --region=${{ env.GCP_REGION }} \
             --service-account=cloudrun-runtime@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
             --add-cloudsql-instances=${{ env.DB_INSTANCE }} \
-            --update-env-vars="APP_ENV=production,STORAGE_PROVIDER=gcs,POSTGRES_HOST=/cloudsql/${{ env.DB_INSTANCE }},POSTGRES_USER=rag_user,POSTGRES_DB=rag" \
+            --update-env-vars="APP_ENV=production,STORAGE_PROVIDER=gcs,RUN_DB_MIGRATIONS=false,POSTGRES_HOST=/cloudsql/${{ env.DB_INSTANCE }},POSTGRES_USER=rag_user,POSTGRES_DB=rag_db" \
             --update-secrets="MISTRAL_API_KEY=MISTRAL_API_KEY:latest,POSTGRES_PASSWORD=POSTGRES_PASSWORD:latest,JWT_SECRET=JWT_SECRET:latest" \
             --allow-unauthenticated \
             --port=8000 \

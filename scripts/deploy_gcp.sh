@@ -28,12 +28,12 @@ echo "========================================================="
 # Resource Names
 BUCKET_NAME="simplon-rag-corpus-$GCP_PROJECT"
 DB_INSTANCE_NAME="simplon-rag-db-instance"
-DB_NAME="rag"
+DB_NAME="rag_db"
 DB_USER="rag_user"
 REPO_NAME="simplon-rag-repo"
 IMAGE_NAME="api"
 SERVICE_NAME="simplon-rag-api"
-SERVICE_ACCOUNT_NAME="simplon-rag-sa"
+SERVICE_ACCOUNT_NAME="cloudrun-runtime"
 SERVICE_ACCOUNT_EMAIL="$SERVICE_ACCOUNT_NAME@$GCP_PROJECT.iam.gserviceaccount.com"
 
 # Secure random password generation if not provided in environment
@@ -212,7 +212,7 @@ gcloud run deploy "$SERVICE_NAME" \
     --region="$REGION" \
     --service-account="$SERVICE_ACCOUNT_EMAIL" \
     --add-cloudsql-instances="$DB_CONN_STRING" \
-    --update-env-vars="APP_ENV=production,STORAGE_PROVIDER=gcs,GCS_BUCKET_NAME=$BUCKET_NAME,POSTGRES_HOST=/cloudsql/$DB_CONN_STRING,POSTGRES_USER=$DB_USER,POSTGRES_DB=$DB_NAME,MISTRAL_CHAT_MODEL=mistral-large-latest,MISTRAL_EMBED_MODEL=mistral-embed,CORS_ALLOWED_ORIGINS=*" \
+    --update-env-vars="APP_ENV=production,STORAGE_PROVIDER=gcs,RUN_DB_MIGRATIONS=false,GCS_BUCKET_NAME=$BUCKET_NAME,POSTGRES_HOST=/cloudsql/$DB_CONN_STRING,POSTGRES_USER=$DB_USER,POSTGRES_DB=$DB_NAME,MISTRAL_CHAT_MODEL=mistral-large-latest,MISTRAL_EMBED_MODEL=mistral-embed,CORS_ALLOWED_ORIGINS=*" \
     --update-secrets="MISTRAL_API_KEY=MISTRAL_API_KEY:latest,POSTGRES_PASSWORD=POSTGRES_PASSWORD:latest,JWT_SECRET=JWT_SECRET:latest" \
     --allow-unauthenticated \
     --port=8000 \

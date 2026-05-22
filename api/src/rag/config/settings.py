@@ -31,7 +31,8 @@ class Settings(BaseSettings):
     postgres_port: int = 5432
     postgres_db: str = "rag"
     postgres_user: str = "rag_user"
-    postgres_password: str
+    # Optional at boot (Cloud Run liveness); required for DB-backed routes.
+    postgres_password: str = ""
     postgres_schema: str = "rag"
 
     # Application
