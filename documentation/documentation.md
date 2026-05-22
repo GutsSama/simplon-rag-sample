@@ -1,5 +1,7 @@
 # Simplon RAG - Architecture & Observability Documentation
 
+> Index général du dossier : [README.md](README.md)
+
 Bienvenue dans la documentation technique du projet **Simplon RAG**. Ce projet implémente un chatbot de support intelligent basé sur une architecture RAG (Retrieval Augmented Generation), conçu pour être déployé localement avec une observabilité de niveau production.
 
 ## 🏗️ Architecture Globale
@@ -14,9 +16,9 @@ Le système repose sur un flux agentique piloté par **LangGraph**, permettant u
 5.  **[Tracing & Langfuse](langfuse.md)** : Observabilité profonde des flux LLM.
 6.  **[Guide des Commandes CLI](commands.md)** : Cheat sheet pour le lancement, les tests et le debug.
 7.  **[Alerting Discord](discord.md)** : Configuration Alertmanager → Discord, liste des alertes et procédure de test.
-8.  **[Runbook — Haute Latence](runbooks/high-latency-messages.md)** : Diagnostic et mitigation du p95 élevé.
-9.  **[Runbook — Taux d'Erreur](runbooks/high-error-rate.md)** : Diagnostic et mitigation des erreurs 5xx.
-10. **[Runbook — LLM Indisponible](runbooks/llm-service-down.md)** : Diagnostic et mitigation d'un service LLM down.
+8.  **[Runbook — Haute Latence](../runbooks/high-latency-messages.md)** : Diagnostic et mitigation du p95 élevé.
+9.  **[Runbook — Taux d'Erreur](../runbooks/high-error-rate.md)** : Diagnostic et mitigation des erreurs 5xx.
+10. **[Runbook — LLM Indisponible](../runbooks/llm-service-down.md)** : Diagnostic et mitigation d'un service LLM down.
 
 ---
 

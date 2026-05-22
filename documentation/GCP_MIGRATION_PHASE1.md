@@ -30,7 +30,7 @@ gcloud services enable artifactregistry.googleapis.com run.googleapis.com
 ## 2. Réponses aux Questions Guidantes
 
 ### Question A : Quels fichiers NE doivent PAS entrer dans l'image Docker ?
-Pour assurer la sécurité, la légèreté et la conformité de l'image de production, les fichiers suivants doivent être explicitement ignorés (via le fichier [api/.dockerignore](file:///Users/amaury/simplon-rag-sample/api/.dockerignore)) :
+Pour assurer la sécurité, la légèreté et la conformité de l'image de production, les fichiers suivants doivent être explicitement ignorés (via le fichier [api/.dockerignore](../api/.dockerignore)) :
 1. **Secrets et Clés d'API (`.env`, `.env.example`)** : Les jetons secrets (tels que `MISTRAL_API_KEY`, `POSTGRES_PASSWORD`, `JWT_SECRET`) ne doivent **jamais** être écrits en dur dans l'image. Ils seront injectés dynamiquement au runtime de Cloud Run via **Google Secret Manager**.
 2. **Environnements Virtuels et Modules (`.venv/`, `node_modules/`)** : Ces dossiers contiennent des dépendances compilées pour l'hôte local (macOS) qui provoqueraient des conflits d'architecture (Linux slim) et alourdiraient l'image de plusieurs centaines de Mo.
 3. **Caches de développement (`__pycache__/`, `.pytest_cache/`, `.ruff_cache/`)** : Fichiers temporaires générés lors des tests et des vérifications locales, superflus en production.
@@ -70,7 +70,7 @@ Dans une architecture serverless telle que Google Cloud Run, les conteneurs sont
 - Lorsqu'il n'y a pas de trafic, Cloud Run met à l'échelle le service à 0 pour économiser les coûts.
 - Lors de l'arrivée d'une nouvelle requête, si aucune instance n'est active, GCP effectue un **Cold Start** : il télécharge l'image Docker depuis Artifact Registry, l'extrait en mémoire, et lance l'application.
 - Si l'image pèse plusieurs Go, le temps de latence réseau et d'extraction peut prendre plus de 30 secondes.
-- Grâce au **build multi-stage** configuré dans notre [Dockerfile](file:///Users/amaury/simplon-rag-sample/api/Dockerfile) (extraction des dépendances dans un stage `builder` puis copie sélective uniquement du binaire/virtuallenv final sur une base de runtime `slim`), la taille finale compressée de l'image est réduite à **269 Mo**, limitant la latence de démarrage à **moins d'une seconde**.
+- Grâce au **build multi-stage** configuré dans notre [Dockerfile](../api/Dockerfile) (extraction des dépendances dans un stage `builder` puis copie sélective uniquement du binaire/virtuallenv final sur une base de runtime `slim`), la taille finale compressée de l'image est réduite à **269 Mo**, limitant la latence de démarrage à **moins d'une seconde**.
 
 ---
 

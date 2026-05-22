@@ -1,6 +1,6 @@
 # Guide de Migration GCP - Implémentation Finale (Phase 2 & 3)
 
-Ce document décrit l'implémentation complète et finale de l'architecture de production sécurisée pour l'API RAG Simplon sur **Google Cloud Platform (GCP)**. Il fait suite à la [Phase 1 (Artifact Registry & Docker)](file:///Users/amaury/simplon-rag-sample/GCP_MIGRATION_PHASE1.md) et détaille l'orchestration de Cloud Run, Cloud SQL, Google Cloud Storage, Secret Manager et la gestion des accès IAM.
+Ce document décrit l'implémentation complète et finale de l'architecture de production sécurisée pour l'API RAG Simplon sur **Google Cloud Platform (GCP)**. Il fait suite à la [Phase 1 (Artifact Registry & Docker)](GCP_MIGRATION_PHASE1.md) et détaille l'orchestration de Cloud Run, Cloud SQL, Google Cloud Storage, Secret Manager et la gestion des accès IAM.
 
 ---
 
@@ -154,7 +154,7 @@ gcloud run deploy simplon-rag-api \
 
 ### A. Gestion du Pool de Connexions
 Sur Cloud Run, les instances s'activent et s'arrêtent au gré du trafic. Si le pool est mal dimensionné, des centaines de connexions zombie peuvent saturer l'instance `db-f1-micro`.
-* Le code applicatif dans [session.py](file:///Users/amaury/simplon-rag-sample/api/src/rag/db/session.py) utilise les variables `db_pool_size=5` et `db_max_overflow=10` pour éviter d'inonder Cloud SQL.
+* Le code applicatif dans [session.py](../api/src/rag/db/session.py) utilise les variables `db_pool_size=5` et `db_max_overflow=10` pour éviter d'inonder Cloud SQL.
 * Le paramètre `pool_recycle=1800` (30 minutes) est configuré pour nettoyer proprement les connexions inactives.
 
 ### B. Gestion des Fichiers Temporaires et Fuites Mémoires

@@ -224,7 +224,7 @@ Le `.env` local sert uniquement au développement et à `scripts/sync_mistral_se
 
 - Créer `cloudrun-runtime` et `github-deploy` : `./scripts/setup_gcp_service_accounts.sh all`
 - Activer Workload Identity Federation : voir [`GCP_WIF_AND_CICD.md`](GCP_WIF_AND_CICD.md)
-- CD GitHub sur `main` : [`.github/workflows/cd.yml`](.github/workflows/cd.yml)
+- CD GitHub sur `main` : [`.github/workflows/cd.yml`](../.github/workflows/cd.yml)
 - Retirer les droits secrets du default compute SA
 
 ---
@@ -247,5 +247,5 @@ Le `.env` local sert uniquement au développement et à `scripts/sync_mistral_se
 
 - [GCP_WIF_AND_CICD.md](GCP_WIF_AND_CICD.md) — WIF, IAM, CD
 - [GCP_MIGRATION_FINAL.md](GCP_MIGRATION_FINAL.md) — migration initiale
-- [scripts/DEPLOY_PHASE1.md](scripts/DEPLOY_PHASE1.md) — checklist rapide
+- [scripts/DEPLOY_PHASE1.md](../scripts/DEPLOY_PHASE1.md) — checklist rapide
 - [Cloud Run troubleshooting](https://cloud.google.com/run/docs/troubleshooting)

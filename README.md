@@ -178,23 +178,26 @@ git commit -m "feat: ..."
 | **API (backend)** | https://simplon-rag-api-hohepdhnvq-ew.a.run.app |
 | **Frontend (Streamlit)** | https://simplon-rag-frontend-hohepdhnvq-ew.a.run.app |
 
-Guide complet (étapes, commandes, incidents, corrections) : **[`GCP_DEPLOYMENT.md`](GCP_DEPLOYMENT.md)**.
+Guide complet (étapes, commandes, incidents, corrections) : **[`documentation/GCP_DEPLOYMENT.md`](documentation/GCP_DEPLOYMENT.md)**.
 
 Checklist rapide : [`scripts/DEPLOY_PHASE1.md`](scripts/DEPLOY_PHASE1.md).
 
 ## Documentation
 
-All project documentation, runbooks, and SRE guidelines have been centralized in the [`docs-brief/`](docs-brief/) directory.
+Toute la documentation Markdown du projet est centralisée dans [`documentation/`](documentation/) (index : [`documentation/README.md`](documentation/README.md)).
 
-| File | Description |
-|------|-------------|
-| [`GCP_DEPLOYMENT.md`](GCP_DEPLOYMENT.md) | **Rapport final déploiement GCP** (URLs, commandes, problèmes/solutions) |
-| [`docs-brief/CONTRIBUTING.md`](docs-brief/CONTRIBUTING.md) | Contribution guidelines |
-| [`docs-brief/CHANGELOG.md`](docs-brief/CHANGELOG.md) | Version history |
-| [`docs-brief/architecture-overview.md`](docs-brief/architecture-overview.md) | Cognitive map and system overview |
-| [`docs-brief/GAME_DAY.md`](docs-brief/GAME_DAY.md) | SRE Game Day playbooks |
-| [`GCP_WIF_AND_CICD.md`](GCP_WIF_AND_CICD.md) | Guide configuration WIF, Cloud Run et IAM |
-| [`VALIDATION_CICD_WIF.md`](VALIDATION_CICD_WIF.md) | Rapport de validation de l'architecture CI/CD DevOps |
+| Fichier | Description |
+|---------|-------------|
+| [`documentation/GCP_DEPLOYMENT.md`](documentation/GCP_DEPLOYMENT.md) | **Rapport final déploiement GCP** (URLs, commandes, problèmes/solutions) |
+| [`documentation/GCP_WIF_AND_CICD.md`](documentation/GCP_WIF_AND_CICD.md) | WIF, Cloud Run, IAM, variables GitHub |
+| [`documentation/VALIDATION_CICD_WIF.md`](documentation/VALIDATION_CICD_WIF.md) | Validation architecture CI/CD DevOps |
+| [`documentation/DEMO_CICD_10MIN.md`](documentation/DEMO_CICD_10MIN.md) | Script de démo CI/CD (10 min) |
+| [`documentation/CONTRIBUTING.md`](documentation/CONTRIBUTING.md) | Guide de contribution |
+| [`documentation/CHANGELOG.md`](documentation/CHANGELOG.md) | Historique des versions |
+| [`documentation/architecture-overview.md`](documentation/architecture-overview.md) | Vue d’ensemble du système |
+| [`documentation/GAME_DAY.md`](documentation/GAME_DAY.md) | Game Day / chaos engineering |
+
+Runbooks SRE : [`runbooks/`](runbooks/). Le dossier [`docs-brief/`](docs-brief/) conserve des copies de brief et l’infographie d’architecture.
 
 ## License
 
