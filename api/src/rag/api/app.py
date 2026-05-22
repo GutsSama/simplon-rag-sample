@@ -8,13 +8,13 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from rag.api.logging import configure_logging
 from rag.api.routers import chaos, chat, eval, feedback, health, ingestion
 from rag.config.settings import get_settings
-from rag.db.session import engine
+from rag.db.session import _get_engine
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
-    await engine.dispose()
+    await _get_engine().dispose()
 
 
 def create_app() -> FastAPI:

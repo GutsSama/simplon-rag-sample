@@ -1,3 +1,4 @@
+import os
 import uuid as _uuid_mod
 
 from sqlalchemy import MetaData, String
@@ -5,11 +6,9 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.types import TypeDecorator
 
-from rag.config.settings import get_settings
-
-_settings = get_settings()
-
-metadata_obj = MetaData(schema=_settings.postgres_schema)
+# Read schema from env without requiring postgres_password (which may be absent in tests)
+_schema = os.getenv("POSTGRES_SCHEMA", "rag")
+metadata_obj = MetaData(schema=_schema)
 
 
 class PortableUUID(TypeDecorator):
